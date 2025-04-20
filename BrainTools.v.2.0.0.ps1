@@ -4,6 +4,7 @@ param (
     [string[]]$RequestFiles = $null # Optional parameter for specifying one or more request files
 )
 
+
 # Change directory to $PSScriptRoot at the start of the script
 Set-Location -Path $PSScriptRoot
 
