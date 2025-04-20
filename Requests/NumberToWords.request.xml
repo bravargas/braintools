@@ -1,0 +1,26 @@
+<requestTemplate>
+    <type>SOAP</type>
+    <url>{{#PostManSoapContinentsServiceURL}}</url>
+    <path>/websamples.countryinfo/CountryInfoService.wso</path>
+    <method>POST</method>
+    <headers>
+        <header>
+            <name>Content-Type</name>
+            <value>text/xml; charset=utf-8</value>
+        </header>
+        <header>
+            <name>SOAPAction</name>
+            <value>http://www.oorsprong.org/websamples.countryinfo/ListOfContinentsByName</value>
+        </header>
+    </headers>
+    <body>
+        <soap12:Envelope xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
+            <soap12:Body>
+                <ListOfContinentsByName xmlns="http://www.oorsprong.org/websamples.countryinfo">
+                </ListOfContinentsByName>
+            </soap12:Body>
+        </soap12:Envelope>
+    </body>
+    <parameters>
+    </parameters>
+</requestTemplate>

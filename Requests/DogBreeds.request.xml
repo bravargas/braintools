@@ -1,0 +1,25 @@
+<requestTemplate>
+  <type>REST</type>
+  <url>{{#PostManDogsRestServiceURL}}</url>
+  <path>/api/breeds/list/all</path>
+  <method>GET</method>
+  <headers>
+    <header>
+      <name>Content-Type</name>
+      <value>application/json</value>
+    </header>
+  </headers>
+  <body>
+  </body>
+  <responseActions>
+    <action>
+      <path>message.bulldog[1]</path>
+      <display>true</display>
+      <globalVariableName>SecondBulldog</globalVariableName>
+    </action>
+    <action>
+      <path>.</path>
+      <display>true</display>
+    </action>
+  </responseActions>
+</requestTemplate>

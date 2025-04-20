@@ -1,0 +1,58 @@
+{
+  "routes": [
+    {
+      "path": "/authentication/v1.0/client",
+      "method": "POST",
+      "responseFile": "AlertHubAuthenticate.response.json",
+      "contentType": "application/json"
+    },
+    {
+        "path": "/pushnotification/delivery",
+        "method": "POST",
+        "responseFile": "AlertHubDeliveryMessage.response.json",
+        "contentType": "application/json"
+      },    
+      {
+        "path": "/pushnotification/notificationstatus",
+        "method": "POST",
+        "responseFile": "AlertHubNotificationStatus.response.json",
+        "contentType": "application/json"
+      },       
+    {
+      "path": "/api/breeds/list/all",
+      "method": "GET",
+      "responseFile": "DogBreeds.response.json",
+      "contentType": "application/json"
+    },
+    {
+      "path": "/api/breed/boxer/images/random",
+      "method": "GET",
+      "responseFile": "DogBreedsRandomImage.response.json",
+      "contentType": "application/json"
+    },
+    {
+      "path": "/websamples.countryinfo/CountryInfoService.wso",
+      "method": "POST",
+      "matchCondition": {
+        "bodyContains": "ListOfContinentsByName"
+      },
+      "responseFile": "ListOfContinentsByName.response.xml",
+      "contentType": "text/xml; charset=utf-8"
+    },
+    {
+      "path": "/websamples.countryinfo/CountryInfoService.wso",
+      "method": "POST",
+      "matchCondition": {
+        "bodyContains": "CapitalCity"
+      },
+      "responseFile": "CapitalCity.response.xml",
+      "contentType": "text/xml; charset=utf-8"
+    },
+    {
+      "path": "/v2/quotes",
+      "method": "GET",
+      "responseFile": "ron-swanson-quotes.response.json",
+      "contentType": "application/json"
+    }           
+  ]
+}

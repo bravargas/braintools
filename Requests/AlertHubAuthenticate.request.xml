@@ -1,0 +1,50 @@
+<requestTemplate>
+  <type>REST</type>
+  <url>{{#AlertHubRestServiceURL}}</url>
+  <path>/authentication/v1.0/client</path>
+  <method>POST</method>
+  <headers>
+    <header>
+      <name>Content-Type</name>
+      <value>application/json</value>
+    </header>
+  </headers>
+  <body>
+    {
+      "client_id": "{{AlertHubClientId}}",
+      "client_secret": "{{AlertHubSecret}}",
+      "grant_type": "client_credentials",
+      "scope": "organization:{{AlertHubOrgId}},user:{{AlertHubUser}}"
+      }
+    </body>
+  <responseActions>
+    <action>
+      <path>access_token</path>
+      <display>true</display>
+      <globalVariableName>access_token</globalVariableName>
+    </action>
+    <action>
+      <path>token_type</path>
+      <display>true</display>
+      <globalVariableName>token_type</globalVariableName>
+    </action>
+  </responseActions>
+  <parameters>
+    <parameter>
+      <name>AlertHubClientId</name>
+      <value>COMPANYPUSH1_CERT</value>
+    </parameter>
+    <parameter>
+      <name>AlertHubSecret</name>
+      <value>0xA47F2C9D1B3E45A19D084C6723BA89F0D2E7C1A3B6D8FE</value>
+    </parameter>
+    <parameter>
+      <name>AlertHubOrgId</name>
+      <value>COMPANYNKPUSH1</value>
+    </parameter>
+    <parameter>
+      <name>AlertHubUser</name>
+      <value>AAA</value>
+    </parameter>
+  </parameters>
+</requestTemplate>

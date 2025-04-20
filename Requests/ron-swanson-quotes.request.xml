@@ -1,0 +1,21 @@
+<requestTemplate>
+    <type>REST</type>
+    <url>{{#RonSwansonQuotesURL}}</url>
+    <path>/v2/quotes</path>
+    <method>GET</method>
+    <headers>
+        <header>
+            <name>Content-Type</name>
+            <value>application/json</value>
+        </header>
+    </headers>
+    <body>
+    </body>
+    <responseActions>
+        <action>
+            <path>.</path>            <!-- Use a single dot to extract the entire response -->
+            <display>true</display>
+            <globalVariableName>Quote</globalVariableName>
+        </action>
+    </responseActions>
+</requestTemplate>

@@ -1,0 +1,42 @@
+{
+    "GlobalRequestParameters": {
+        "OrganizationId": "MYFI",
+        "TenantId": "1122334455",
+        "AlertHubClientId": "COMPANYPUSH1_CERT",
+        "AlertHubSecret": "0xA47F2C9D1B3E45A19D084C6723BA89F0D2E7C1A3B6D8FE",
+        "AlertHubOrgId": "COMPANYNKPUSH1",
+        "AlertHubUser": "AAA"
+    },
+    "Hosts": {
+        "PostManDogsRestServiceURL": {
+            "host": "http://localhost:8088"
+        },
+        "RonSwansonQuotesURL": {
+            "host": "http://localhost:8088"
+        },
+        "PostManSoapContinentsServiceURL": {
+            "host": "http://localhost:8088",
+            "UseCertificate": {
+                "enabled": true,
+                "SearchBy": "PfxCertificateAndPwd",
+                "SearchValue": "./certificates/certificate.pfx|Abcd1234$"
+            },
+            "UseProxy": {
+                "enabled": false,
+                "proxyUrl": "http://localhost:8866"
+            }
+        },
+        "AlertHubRestServiceURL": {
+            "host": "http://localhost:8088",
+            "UseCertificate": {
+                "enabled": false,
+                "SearchBy": "PfxCertificateAndPwd",
+                "SearchValue": "./certificates/certificate.pfx|Abcd1234$"
+            },
+            "UseProxy": {
+                "enabled": false,
+                "proxyUrl": "http://localhost:8866"
+            }
+        }
+    }
+}

@@ -1,0 +1,67 @@
+<requestTemplate>
+  <type>REST</type>
+  <url>{{#AlertHubRestServiceURL}}</url>
+  <path>/pushnotification/notificationstatus</path>
+  <method>POST</method>
+  <headers>
+    <header>
+      <name>Content-Type</name>
+      <value>application/json</value>
+    </header>
+    <header>
+      <name>Authorization</name>
+      <value>{{token_Type}} {{access_token}}</value>
+    </header>
+  </headers>
+  <body>
+    {
+      "deviceNotificationsDto": [{ 
+      "appId": "{{appId}}",
+      "deviceType": "{{deviceType}}",
+      "deviceId": "{{deviceId}}",
+      "notificationId": "{{notificationId}} }]"
+      }
+  </body>
+  <responseActions>
+    <action>
+      <path>status</path>
+      <display>true</display>
+      <globalVariableName>status</globalVariableName>
+    </action>
+    <action>
+      <path>notificationId</path>
+      <display>true</display>
+      <globalVariableName>notificationId</globalVariableName>
+    </action>
+    <action>
+      <path>.</path>
+      <display>true</display>
+    </action>
+  </responseActions>
+  <parameters>
+    <parameter>
+      <name>token_Type</name>
+      <value>Bearer</value>
+    </parameter>
+    <parameter>
+      <name>access_token</name>
+      <value>XyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c</value>
+    </parameter>
+    <parameter>
+      <name>appId</name>
+      <value>com.mydomain.com</value>
+    </parameter>
+    <parameter>
+      <name>deviceType</name>
+      <value>APNS</value>
+    </parameter>
+    <parameter>
+      <name>deviceId</name>
+      <value>dTzshoHxT3m5V6YPlA1d_o:APA91bFbN02IbHeSi9wZ78E8e3G-UmwALn3wz-NB8t7CJHyFmh3mC0r4Uw4b1Mvvb8C-KzakWvSd44HWvtKR96aZcrZz8wQkF_MD7ByXFnvrTeVF7JquWXxbdGR-uvvXADS0h8c2wvZIrHE</value>
+    </parameter>
+    <parameter>
+      <name>notificationId</name>
+      <value>AH-477EC9F0-5A3E-41B3-B658-BBE38FDC1A46</value>
+    </parameter>
+  </parameters>
+</requestTemplate>
