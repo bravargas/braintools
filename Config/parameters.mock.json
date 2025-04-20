@@ -1,7 +1,5 @@
 {
     "GlobalRequestParameters": {
-        "OrganizationId": "MYFI",
-        "TenantId": "1122334455",
         "AlertHubClientId": "COMPANYPUSH1_CERT",
         "AlertHubSecret": "0xA47F2C9D1B3E45A19D084C6723BA89F0D2E7C1A3B6D8FE",
         "AlertHubOrgId": "COMPANYNKPUSH1",
