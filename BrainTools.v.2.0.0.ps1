@@ -346,7 +346,7 @@ function Invoke-RequestFile {
                 # Handle certificate if required
                 if ($hostsConfig.Hosts.$hostKey.UseCertificate -and $hostsConfig.Hosts.$hostKey.UseCertificate.enabled) {
                     Write-Verbose "$($MyInvocation.MyCommand.Name):: Certificate required for host '$hostKey'. Fetching certificate..."
-                    $certificate = Get-Certificate -SearchBy $hostsConfig.Hosts.$hostKey.UseCertificate.SearchBy -SearchValue $hostsConfig.Hosts.$hostKey.UseCertificate.SearchValue
+                    $certificate = Get-Certificate -SearchBy $hostsConfig.Hosts.$hostKey.UseCertificate.SearchBy -SearchValue $hostsConfig.Hosts.$hostKey.UseCertificate.SearchValue -Store $hostsConfig.Hosts.$hostKey.UseCertificate.Store
                     if (-not $certificate) {
                         throw "Failed to retrieve the required certificate for host '$hostKey'."
                     }
