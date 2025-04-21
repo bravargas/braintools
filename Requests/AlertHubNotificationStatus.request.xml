@@ -1,7 +1,7 @@
 <requestTemplate>
   <type>REST</type>
   <url>{{#AlertHubRestServiceURL}}</url>
-  <path>/delivery/api/v1.0/pushnotification/notificationstatus</path>
+  <path>/delivery/api/v1.0/pushnotification/notificationsstatus</path>
   <method>POST</method>
   <headers>
     <header>
