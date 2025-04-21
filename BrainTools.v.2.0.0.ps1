@@ -258,7 +258,7 @@ function Get-Certificate {
             }
         }
         else {
-            # Set the default store location if not provided
+            # Set the default store location if not provided. Consider to use CurrentUser\My instead
             if (-not $Store) {
                 $Store = 'LocalMachine\My'
             }
