@@ -1,7 +1,7 @@
 <requestTemplate>
   <type>REST</type>
   <url>{{#AlertHubRestServiceURL}}</url>
-  <path>/pushnotification/notificationstatus</path>
+  <path>/delivery/api/v1.0/pushnotification/notificationstatus</path>
   <method>POST</method>
   <headers>
     <header>
@@ -18,8 +18,7 @@
       "deviceNotificationsDto": [{ 
       "appId": "{{appId}}",
       "deviceType": "{{deviceType}}",
-      "deviceId": "{{deviceId}}",
-      "notificationId": "{{notificationId}} }]"
+      "notificationId": "{{notificationId}}" }]
       }
   </body>
   <responseActions>
@@ -41,7 +40,7 @@
   <parameters>
     <parameter>
       <name>token_Type</name>
-      <value>Bearer</value>
+      <value>bearer</value>
     </parameter>
     <parameter>
       <name>access_token</name>
@@ -49,11 +48,11 @@
     </parameter>
     <parameter>
       <name>appId</name>
-      <value>com.mydomain.com</value>
+      <value>com.mydomain.mobilebanking</value>
     </parameter>
     <parameter>
       <name>deviceType</name>
-      <value>APNS</value>
+      <value>GCM</value>
     </parameter>
     <parameter>
       <name>deviceId</name>
@@ -61,7 +60,7 @@
     </parameter>
     <parameter>
       <name>notificationId</name>
-      <value>AH-477EC9F0-5A3E-41B3-B658-BBE38FDC1A46</value>
+      <value>NH-477EC9F0-5A3E-41B3-B658-BBE38FDC1A46</value>
     </parameter>
   </parameters>
 </requestTemplate>

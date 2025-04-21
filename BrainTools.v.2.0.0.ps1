@@ -1,13 +1,41 @@
 [CmdletBinding()]
 param (
-    [string]$Environment = "MOCK" # Default to "QA"
+    [string]$Environment = "MOCK", # Default to "QA"
+    [string[]]$RequestFiles = $null # Optional parameter for specifying one or more request files
 )
+
 
 # Change directory to $PSScriptRoot at the start of the script
 Set-Location -Path $PSScriptRoot
 
 # Global parameters array
 $Global:Parameters = @{}
+
+# If request files are provided, execute them in order and terminate the script
+if ($RequestFiles) {
+    try {
+        foreach ($RequestFile in $RequestFiles) {
+            Write-Host "Executing request file: $RequestFile" -ForegroundColor Cyan
+
+            # Process the specified request file
+            $processedContent = Invoke-RequestFile -FilePath $RequestFile
+
+            # Invoke the request
+            $response = Invoke-Request -RequestContent $processedContent.RequestContent -Certificate $processedContent.Certificate -ProxyUrl $processedContent.ProxyUrl -ProxyUsername $processedContent.ProxyUsername -ProxyPassword $processedContent.ProxyPassword
+
+            # Process the response
+            if ($response) {
+                Invoke-ProcessResponse -ResponseContent $response -RequestTemplate $processedContent.RequestContent
+            }
+
+            Write-Host "Request execution completed for: $RequestFile" -ForegroundColor Green
+        }
+    } catch {
+        Write-ErrorLog -FunctionName $MyInvocation.MyCommand.Name -ErrorMessage $_
+    } finally {
+        exit
+    }
+}
 
 # Centralized error logging function
 function Write-ErrorLog {
@@ -230,7 +258,7 @@ function Get-Certificate {
             }
         }
         else {
-            # Set the default store location if not provided
+            # Set the default store location if not provided. Consider to use CurrentUser\My instead
             if (-not $Store) {
                 $Store = 'LocalMachine\My'
             }
