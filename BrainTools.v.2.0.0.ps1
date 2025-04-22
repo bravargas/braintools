@@ -30,9 +30,11 @@ if ($RequestFiles) {
 
             Write-Host "Request execution completed for: $RequestFile" -ForegroundColor Green
         }
-    } catch {
+    } 
+    catch {
         Write-ErrorLog -FunctionName $MyInvocation.MyCommand.Name -ErrorMessage $_
-    } finally {
+    } 
+    finally {
         exit
     }
 }
@@ -113,9 +115,11 @@ function Show-Menu {
         $OptionNames = $Options | ForEach-Object {
             if ($_ -is [string]) {
                 $_
-            } elseif ($_.PSObject.Properties["Name"]) {
+            } 
+            elseif ($_.PSObject.Properties["Name"]) {
                 $_.Name
-            } else {
+            } 
+            else {
                 "<unnamed>"
             }
         }
@@ -162,9 +166,11 @@ function Show-Menu {
         for ($i = 0; $i -lt $Options.Length; $i++) {
             $displayName = if ($Options[$i] -is [string]) {
                 $Options[$i]
-            } elseif ($Options[$i].PSObject.Properties["Name"]) {
+            } 
+            elseif ($Options[$i].PSObject.Properties["Name"]) {
                 $Options[$i].Name
-            } else {
+            } 
+            else {
                 "<unnamed>"
             }
 
@@ -901,7 +907,7 @@ try {
             Write-Host "Processed Content:" -ForegroundColor Green
 
             # Format and print the XML content with proper indentation
-            Write-Host $(PrettyPrint-Xml -XmlString $processedContent.RequestContent.OuterXml -RootElement "Root" -indent 4) -ForegroundColor White
+            Write-Host (PrettyPrint-Xml -XmlString $processedContent.RequestContent.OuterXml -RootElement "Root" -Indent 4) -ForegroundColor White
             Write-Host " "
 
             # Invoke the request
