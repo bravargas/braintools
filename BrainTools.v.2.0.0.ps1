@@ -513,60 +513,6 @@ function Invoke-Request {
     }
 }
 
-function Format-XML ([xml]$xml, $indent = 2) {
-    try {
-        Write-Verbose "$($MyInvocation.MyCommand.Name) START"
-        $StringWriter = New-Object System.IO.StringWriter
-        $XmlWriter = New-Object System.Xml.XmlTextWriter $StringWriter
-        $xmlWriter.Formatting = "indented"
-        $xmlWriter.Indentation = $Indent
-        $xml.WriteContentTo($XmlWriter)
-        $XmlWriter.Flush()
-        $StringWriter.Flush()
-
-        return $StringWriter.ToString()
-    }
-    catch {
-        Write-Host "Error: $($_.Exception.Message)" -ForegroundColor Red
-    }
-    finally {
-        Write-Verbose "$($MyInvocation.MyCommand.Name) END"
-    }        
-}
-
-function Get-XmlElementValue {
-    param (
-        [string]$Path, # The path to the desired value or section
-        [string]$XmlContent     # The XML content as a string
-    )
-
-    # Load the XML content into an XML object
-    [xml]$XmlDoc = $XmlContent
-
-    # Split the path into components
-    $PathComponents = $Path -split '\.'
-
-    # Navigate through the XML object using the components of the path
-    $CurrentNode = $XmlDoc
-    foreach ($Component in $PathComponents) {
-        # Use the local name of the element to navigate, ignoring the namespaces
-        $CurrentNode = $CurrentNode.SelectSingleNode("//*[local-name() = '$Component']")
-
-        if ($null -eq $CurrentNode) {
-            throw "Node '$Component' not found in the provided XML."
-        }
-    }
-
-    # Determine what to return based on the node type
-    if ($CurrentNode.HasChildNodes) {
-        # If the node has child nodes, return its OuterXml (full section)
-        return $CurrentNode.OuterXml
-    }
-    else {
-        # If the node is a leaf node, return its InnerText (single value)
-        return $CurrentNode.InnerText
-    }
-}
 function Format-JsonObject {
     param (
         [Parameter(Mandatory = $true)]
@@ -613,6 +559,7 @@ function Invoke-ProcessRestResponse {
     foreach ($action in $ResponseActions) {
         $path = $action.path
         $display = $action.display
+        $expression = $action.expression
         $globalVariableName = $action.globalVariableName
 
         if (-not $path) {
@@ -655,8 +602,12 @@ function Invoke-ProcessRestResponse {
                     }
                 }
             }
-
-            $value = $currentNode
+            if ($expression) {
+                $value - Invoke-Expression $expression
+            }
+            else {
+                $value = $currentNode
+            }
         }
         else {
             Write-Verbose "$($MyInvocation.MyCommand.Name):: Path '$path' is invalid for a plain string response."
@@ -664,7 +615,8 @@ function Invoke-ProcessRestResponse {
 
         if ($null -ne $value) {
             if ($display -eq "true") {
-                Write-Host "Extracted Value ($path): $($value | ConvertTo-Json -Depth 10)" -ForegroundColor Green
+                Write-Host "Extracted Value ($path): " -ForegroundColor Green
+                Write-Host "$($value | ConvertTo-Json -Depth 10)" -ForegroundColor White
             }
 
             if ($globalVariableName) {
@@ -677,6 +629,7 @@ function Invoke-ProcessRestResponse {
         }
     }
 }
+
 function Invoke-ProcessSoapResponse {
     param (
         $ResponseContent,
@@ -693,6 +646,7 @@ function Invoke-ProcessSoapResponse {
     foreach ($action in $ResponseActions) {
         $path = $action.path
         $display = $action.display
+        $expression = $action.expression
         $globalVariableName = $action.globalVariableName
 
         if (-not $path) {
@@ -704,7 +658,9 @@ function Invoke-ProcessSoapResponse {
         if ($path -eq ".") {
             if ($display -eq "true") {
                 Write-Host "Full SOAP Response:" -ForegroundColor Green
-                Write-Host $ResponseContent -ForegroundColor White
+                # Format and print the XML content with proper indentation
+                Write-Host (PrettyPrint-Xml -XmlString $ResponseContent -Indent 4) -ForegroundColor White
+                Write-Host " "
             }
 
             if ($null -ne $globalVariableName -and $globalVariableName -ne "") {
@@ -746,10 +702,19 @@ function Invoke-ProcessSoapResponse {
         }
 
         if ($currentNode) {
-            $value = $currentNode.InnerText
+            $value = $currentNode.InnerXml
+
+            if ($expression) {
+                Write-Verbose "$($MyInvocation.MyCommand.Name):: Evaluation expression: $expression"
+                # Evaluate the expression in the context of the current node
+                $value = Invoke-Expression $expression
+            }
 
             if ($display -eq "true") {
-                Write-Host "Extracted Value ($path): $value" -ForegroundColor Green
+                Write-Host "Extracted Value ($path): " -ForegroundColor Green
+                # Format and print the XML content with proper indentation
+                Write-Host (PrettyPrint-Xml - $value -Indent 4)  -ForegroundColor White
+                Write-Host " "
             }
 
             if ($null -ne $globalVariableName -and $globalVariableName -ne "") {
@@ -854,7 +819,7 @@ function Update-OrInsertParameter {
 
         # Save the updated XML back to the file
         $xmlContent.Save($ResolvedFilePath)
-        Write-Host "Parameter '$ParamName' updated or inserted successfully in $ResolvedFilePath" -ForegroundColor Green
+        Write-Verbose "Parameter '$ParamName' updated or inserted successfully in $ResolvedFilePath"
 
         # Retrieve the parameter value for use in the script
         return $valueNode.InnerText
@@ -898,7 +863,7 @@ try {
             Write-Host "Processed Content:" -ForegroundColor Green
 
             # Format and print the XML content with proper indentation
-            Write-Host $(Format-XML $processedContent.RequestContent.OuterXml -indent 4)
+            Write-Host $(PrettyPrint-Xml -XmlString $processedContent.RequestContent.OuterXml -RootElement "Roor" -indent 4) -ForegroundColor White
             Write-Host " "
 
             # Invoke the request
