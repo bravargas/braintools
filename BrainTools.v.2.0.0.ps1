@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param (
-    [string]$Environment = "MOCK", # Default to "QA"
+    [string]$Environment = "QA", # Default to "QA"
     [string[]]$RequestFiles = $null # Optional parameter for specifying one or more request files
 )
 
@@ -641,7 +641,7 @@ function Invoke-ProcessRestResponse {
                 }
             }
             if ($expression) {
-                $value - Invoke-Expression $expression
+                $value = Invoke-Expression $expression
             }
             else {
                 $value = $currentNode
@@ -743,7 +743,7 @@ function Invoke-ProcessSoapResponse {
             $value = $currentNode.InnerXml
 
             if ($expression) {
-                Write-Verbose "$($MyInvocation.MyCommand.Name):: Evaluation expression: $expression"
+                Write-Verbose "$($MyInvocation.MyCommand.Name):: Evaluating expression: $expression"
                 # Evaluate the expression in the context of the current node
                 $value = Invoke-Expression $expression
             }
@@ -751,7 +751,7 @@ function Invoke-ProcessSoapResponse {
             if ($display -eq "true") {
                 Write-Host "Extracted Value ($path): " -ForegroundColor Green
                 # Format and print the XML content with proper indentation
-                Write-Host (PrettyPrint-Xml - $value -Indent 4)  -ForegroundColor White
+                Write-Host (PrettyPrint-Xml -XmlString $value -Indent 4)  -ForegroundColor White
                 Write-Host " "
             }
 
@@ -901,7 +901,7 @@ try {
             Write-Host "Processed Content:" -ForegroundColor Green
 
             # Format and print the XML content with proper indentation
-            Write-Host $(PrettyPrint-Xml -XmlString $processedContent.RequestContent.OuterXml -RootElement "Roor" -indent 4) -ForegroundColor White
+            Write-Host $(PrettyPrint-Xml -XmlString $processedContent.RequestContent.OuterXml -RootElement "Root" -indent 4) -ForegroundColor White
             Write-Host " "
 
             # Invoke the request
