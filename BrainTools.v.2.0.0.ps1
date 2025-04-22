@@ -567,6 +567,45 @@ function Get-XmlElementValue {
         return $CurrentNode.InnerText
     }
 }
+
+function PrettyPrint-Xml {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$XmlString, # The XML string to format
+        [string]$RootElement = "Root", # Optional root element to wrap the XML
+        [int]$Indent = 4 # Optional indentation level
+    )
+
+    try {
+        # Remove the XML declaration if it exists
+        $XmlString = $XmlString -replace '<\?xml.*?\?>', ''
+
+        # Wrap the XML string in a single root element
+        $WrappedXmlString = "<$RootElement>$XmlString</$RootElement>"
+
+        # Load the wrapped XML string into an XML object
+        [xml]$XmlObject = $WrappedXmlString
+
+        # Create a StringWriter and XmlTextWriter for pretty printing
+        $StringWriter = New-Object System.IO.StringWriter
+        $XmlWriter = New-Object System.Xml.XmlTextWriter $StringWriter
+        $XmlWriter.Formatting = "Indented"
+        $XmlWriter.Indentation = $Indent
+
+        # Write the XML content to the XmlWriter
+        $XmlObject.WriteTo($XmlWriter)
+        $XmlWriter.Flush()
+        $StringWriter.Flush()
+
+        # Return the formatted XML as a string
+        return $StringWriter.ToString()
+    }
+    catch {
+        Write-Host "Error: $($_.Exception.Message)" -ForegroundColor Red
+        return $XmlString
+    }
+}
+
 function Format-JsonObject {
     param (
         [Parameter(Mandatory = $true)]
