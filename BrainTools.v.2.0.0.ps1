@@ -746,6 +746,8 @@ function Invoke-ProcessSoapResponse {
         }
 
         if ($currentNode -and -not [string]::IsNullOrWhiteSpace($currentNode.InnerText)) {
+
+            if ($null -ne $globalVariableName -and $globalVariableName -ne "") {        
             $value = $currentNode.InnerText
 
             if ($expression) {
@@ -754,8 +756,8 @@ function Invoke-ProcessSoapResponse {
                 $value = Invoke-Expression $expression
         }
 
-        $global:Parameters[$globalVariableName] = $value
-        Write-Verbose "$($MyInvocation.MyCommand.Name): Stored value in global variable '$globalVariableName'."
+        $Global:Parameters[$globalVariableName] = $value
+        Write-Verbose "$($MyInvocation.MyCommand.Name):: Stored value in global variable '$globalVariableName'."
     }
     else {
         $value = $currentNode
@@ -763,7 +765,7 @@ function Invoke-ProcessSoapResponse {
             if ($display -eq "true") {
                 Write-Host "Extracted Value ($path): " -ForegroundColor Green
                 # Format and print the XML content with proper indentation
-                #Write-Host (PrettyPrint-Xml -XmlString $currentNone.InnerXml -Indent 4)  -ForegroundColor White
+                #Write-Host (PrettyPrint-Xml -XmlString $currentNode.InnerXml -Indent 4)  -ForegroundColor White
                 $value
                 Write-Host " "
             }
