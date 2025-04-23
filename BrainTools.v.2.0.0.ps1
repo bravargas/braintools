@@ -136,16 +136,16 @@ function Show-Menu {
         )
 
         # Box drawing chars
-        $TopLeft     = [char]0x250C  # ┌
-        $TopRight    = [char]0x2510  # ┐
-        $BottomLeft  = [char]0x2514  # └
+        $TopLeft = [char]0x250C  # ┌
+        $TopRight = [char]0x2510  # ┐
+        $BottomLeft = [char]0x2514  # └
         $BottomRight = [char]0x2518  # ┘
-        $Horizontal  = [char]0x2500  # ─
-        $Vertical    = [char]0x2502  # │
-        $Tee         = [char]0x252C  # ┬
-        $Cross       = [char]0x253C  # ┼
-        $LeftTee    = [char]0x251C  # ├
-        $RightTee   = [char]0x2524  # ┤
+        $Horizontal = [char]0x2500  # ─
+        $Vertical = [char]0x2502  # │
+        $Tee = [char]0x252C  # ┬
+        $Cross = [char]0x253C  # ┼
+        $LeftTee = [char]0x251C  # ├
+        $RightTee = [char]0x2524  # ┤
 
         $FrameColor = "Gray"
 
@@ -748,20 +748,20 @@ function Invoke-ProcessSoapResponse {
         if ($currentNode -and -not [string]::IsNullOrWhiteSpace($currentNode.InnerText)) {
 
             if ($null -ne $globalVariableName -and $globalVariableName -ne "") {        
-            $value = $currentNode.InnerText
+                $value = $currentNode.InnerText
 
-            if ($expression) {
-                Write-Verbose "$($MyInvocation.MyCommand.Name):: Evaluating expression: $expression"
-                # Evaluate the expression in the context of the current node
-                $value = Invoke-Expression $expression
-        }
+                if ($expression) {
+                    Write-Verbose "$($MyInvocation.MyCommand.Name):: Evaluating expression: $expression"
+                    # Evaluate the expression in the context of the current node
+                    $value = Invoke-Expression $expression
+                }
 
-        $Global:Parameters[$globalVariableName] = $value
-        Write-Verbose "$($MyInvocation.MyCommand.Name):: Stored value in global variable '$globalVariableName'."
-    }
-    else {
-        $value = $currentNode
-    }
+                $Global:Parameters[$globalVariableName] = $value
+                Write-Verbose "$($MyInvocation.MyCommand.Name):: Stored value in global variable '$globalVariableName'."
+            }
+            else {
+                $value = $currentNode
+            }
             if ($display -eq "true") {
                 Write-Host "Extracted Value ($path): " -ForegroundColor Green
                 # Format and print the XML content with proper indentation
