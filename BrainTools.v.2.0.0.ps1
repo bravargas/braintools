@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param (
-    [string]$Environment = "MOCK", # Default to "QA"
+    [string]$Environment = "QA", # Default to "QA"
     [string[]]$RequestFiles = $null # Optional parameter for specifying one or more request files
 )
 
@@ -30,9 +30,11 @@ if ($RequestFiles) {
 
             Write-Host "Request execution completed for: $RequestFile" -ForegroundColor Green
         }
-    } catch {
+    } 
+    catch {
         Write-ErrorLog -FunctionName $MyInvocation.MyCommand.Name -ErrorMessage $_
-    } finally {
+    } 
+    finally {
         exit
     }
 }
@@ -113,9 +115,11 @@ function Show-Menu {
         $OptionNames = $Options | ForEach-Object {
             if ($_ -is [string]) {
                 $_
-            } elseif ($_.PSObject.Properties["Name"]) {
+            } 
+            elseif ($_.PSObject.Properties["Name"]) {
                 $_.Name
-            } else {
+            } 
+            else {
                 "<unnamed>"
             }
         }
@@ -132,16 +136,16 @@ function Show-Menu {
         )
 
         # Box drawing chars
-        $TopLeft     = [char]0x250C  # ┌
-        $TopRight    = [char]0x2510  # ┐
-        $BottomLeft  = [char]0x2514  # └
+        $TopLeft = [char]0x250C  # ┌
+        $TopRight = [char]0x2510  # ┐
+        $BottomLeft = [char]0x2514  # └
         $BottomRight = [char]0x2518  # ┘
-        $Horizontal  = [char]0x2500  # ─
-        $Vertical    = [char]0x2502  # │
-        $Tee         = [char]0x252C  # ┬
-        $Cross       = [char]0x253C  # ┼
-        $LeftTee    = [char]0x251C  # ├
-        $RightTee   = [char]0x2524  # ┤
+        $Horizontal = [char]0x2500  # ─
+        $Vertical = [char]0x2502  # │
+        $Tee = [char]0x252C  # ┬
+        $Cross = [char]0x253C  # ┼
+        $LeftTee = [char]0x251C  # ├
+        $RightTee = [char]0x2524  # ┤
 
         $FrameColor = "Gray"
 
@@ -162,9 +166,11 @@ function Show-Menu {
         for ($i = 0; $i -lt $Options.Length; $i++) {
             $displayName = if ($Options[$i] -is [string]) {
                 $Options[$i]
-            } elseif ($Options[$i].PSObject.Properties["Name"]) {
+            } 
+            elseif ($Options[$i].PSObject.Properties["Name"]) {
                 $Options[$i].Name
-            } else {
+            } 
+            else {
                 "<unnamed>"
             }
 
@@ -258,7 +264,7 @@ function Get-Certificate {
             }
         }
         else {
-            # Set the default store location if not provided
+            # Set the default store location if not provided. Consider to use CurrentUser\My instead
             if (-not $Store) {
                 $Store = 'LocalMachine\My'
             }
@@ -330,7 +336,7 @@ function Invoke-RequestFile {
                 # Handle special placeholders with $
                 switch ($placeholderName) {
                     '$GUID' { $resolvedPlaceholders[$placeholderName] = [guid]::NewGuid().ToString() }
-                    '$TimeStamp' { $resolvedPlaceholders[$placeholderName] = (Get-Date).ToString('yyyy-MM-ddTHH:mm:ss') }
+                    '$TimeStamp' { $resolvedPlaceholders[$placeholderName] = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ") }
                     '$IP' { $resolvedPlaceholders[$placeholderName] = (Get-NetIPAddress -AddressFamily IPv4 | Select-Object -First 1 -ExpandProperty IPAddress) }
                     default { throw "Unknown special placeholder: $placeholderName" }
                 }
@@ -346,7 +352,7 @@ function Invoke-RequestFile {
                 # Handle certificate if required
                 if ($hostsConfig.Hosts.$hostKey.UseCertificate -and $hostsConfig.Hosts.$hostKey.UseCertificate.enabled) {
                     Write-Verbose "$($MyInvocation.MyCommand.Name):: Certificate required for host '$hostKey'. Fetching certificate..."
-                    $certificate = Get-Certificate -SearchBy $hostsConfig.Hosts.$hostKey.UseCertificate.SearchBy -SearchValue $hostsConfig.Hosts.$hostKey.UseCertificate.SearchValue
+                    $certificate = Get-Certificate -SearchBy $hostsConfig.Hosts.$hostKey.UseCertificate.SearchBy -SearchValue $hostsConfig.Hosts.$hostKey.UseCertificate.SearchValue -Store $hostsConfig.Hosts.$hostKey.UseCertificate.Store
                     if (-not $certificate) {
                         throw "Failed to retrieve the required certificate for host '$hostKey'."
                     }
@@ -513,60 +519,44 @@ function Invoke-Request {
     }
 }
 
-function Format-XML ([xml]$xml, $indent = 2) {
+function PrettyPrint-Xml {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$XmlString, # The XML string to format
+        [string]$RootElement = "Root", # Optional root element to wrap the XML
+        [int]$Indent = 4 # Optional indentation level
+    )
+
     try {
-        Write-Verbose "$($MyInvocation.MyCommand.Name) START"
+        # Remove the XML declaration if it exists
+        $XmlString = $XmlString -replace '<\?xml.*?\?>', ''
+
+        # Wrap the XML string in a single root element
+        $WrappedXmlString = "<$RootElement>$XmlString</$RootElement>"
+
+        # Load the wrapped XML string into an XML object
+        [xml]$XmlObject = $WrappedXmlString
+
+        # Create a StringWriter and XmlTextWriter for pretty printing
         $StringWriter = New-Object System.IO.StringWriter
         $XmlWriter = New-Object System.Xml.XmlTextWriter $StringWriter
-        $xmlWriter.Formatting = "indented"
-        $xmlWriter.Indentation = $Indent
-        $xml.WriteContentTo($XmlWriter)
+        $XmlWriter.Formatting = "Indented"
+        $XmlWriter.Indentation = $Indent
+
+        # Write the XML content to the XmlWriter
+        $XmlObject.WriteTo($XmlWriter)
         $XmlWriter.Flush()
         $StringWriter.Flush()
 
+        # Return the formatted XML as a string
         return $StringWriter.ToString()
     }
     catch {
         Write-Host "Error: $($_.Exception.Message)" -ForegroundColor Red
-    }
-    finally {
-        Write-Verbose "$($MyInvocation.MyCommand.Name) END"
-    }        
-}
-
-function Get-XmlElementValue {
-    param (
-        [string]$Path, # The path to the desired value or section
-        [string]$XmlContent     # The XML content as a string
-    )
-
-    # Load the XML content into an XML object
-    [xml]$XmlDoc = $XmlContent
-
-    # Split the path into components
-    $PathComponents = $Path -split '\.'
-
-    # Navigate through the XML object using the components of the path
-    $CurrentNode = $XmlDoc
-    foreach ($Component in $PathComponents) {
-        # Use the local name of the element to navigate, ignoring the namespaces
-        $CurrentNode = $CurrentNode.SelectSingleNode("//*[local-name() = '$Component']")
-
-        if ($null -eq $CurrentNode) {
-            throw "Node '$Component' not found in the provided XML."
-        }
-    }
-
-    # Determine what to return based on the node type
-    if ($CurrentNode.HasChildNodes) {
-        # If the node has child nodes, return its OuterXml (full section)
-        return $CurrentNode.OuterXml
-    }
-    else {
-        # If the node is a leaf node, return its InnerText (single value)
-        return $CurrentNode.InnerText
+        return $XmlString
     }
 }
+
 function Format-JsonObject {
     param (
         [Parameter(Mandatory = $true)]
@@ -613,6 +603,7 @@ function Invoke-ProcessRestResponse {
     foreach ($action in $ResponseActions) {
         $path = $action.path
         $display = $action.display
+        $expression = $action.expression
         $globalVariableName = $action.globalVariableName
 
         if (-not $path) {
@@ -649,14 +640,18 @@ function Invoke-ProcessRestResponse {
                         $currentNode = $currentNode.$node
                     }
                     else {
-                        Write-Host "Node '$node' not found." -ForegroundColor Red
+                        Write-Verbose "Node '$node' not found."
                         $currentNode = $null
                         break
                     }
                 }
             }
-
-            $value = $currentNode
+            if ($expression) {
+                $value = Invoke-Expression $expression
+            }
+            else {
+                $value = $currentNode
+            }
         }
         else {
             Write-Verbose "$($MyInvocation.MyCommand.Name):: Path '$path' is invalid for a plain string response."
@@ -664,7 +659,8 @@ function Invoke-ProcessRestResponse {
 
         if ($null -ne $value) {
             if ($display -eq "true") {
-                Write-Host "Extracted Value ($path): $($value | ConvertTo-Json -Depth 10)" -ForegroundColor Green
+                Write-Host "Extracted Value ($path): " -ForegroundColor Green
+                Write-Host "$($value | ConvertTo-Json -Depth 10)" -ForegroundColor White
             }
 
             if ($globalVariableName) {
@@ -677,6 +673,7 @@ function Invoke-ProcessRestResponse {
         }
     }
 }
+
 function Invoke-ProcessSoapResponse {
     param (
         $ResponseContent,
@@ -693,6 +690,7 @@ function Invoke-ProcessSoapResponse {
     foreach ($action in $ResponseActions) {
         $path = $action.path
         $display = $action.display
+        $expression = $action.expression
         $globalVariableName = $action.globalVariableName
 
         if (-not $path) {
@@ -704,7 +702,9 @@ function Invoke-ProcessSoapResponse {
         if ($path -eq ".") {
             if ($display -eq "true") {
                 Write-Host "Full SOAP Response:" -ForegroundColor Green
-                Write-Host $ResponseContent -ForegroundColor White
+                # Format and print the XML content with proper indentation
+                Write-Host (PrettyPrint-Xml -XmlString $ResponseContent -Indent 4) -ForegroundColor White
+                Write-Host " "
             }
 
             if ($null -ne $globalVariableName -and $globalVariableName -ne "") {
@@ -738,24 +738,38 @@ function Invoke-ProcessSoapResponse {
                     $currentNode = $currentNode
                 }
                 elseif ($currentNode.Count -eq 0) {
-                    Write-Host "Node '$node' not found." -ForegroundColor Red
+                    Write-Verbose "Node '$node' not found."
                     $currentNode = $null
                     break
                 }
             }
         }
 
-        if ($currentNode) {
-            $value = $currentNode.InnerText
+        if ($currentNode -and -not [string]::IsNullOrWhiteSpace($currentNode.InnerText)) {
 
-            if ($display -eq "true") {
-                Write-Host "Extracted Value ($path): $value" -ForegroundColor Green
-            }
+            if ($null -ne $globalVariableName -and $globalVariableName -ne "") {        
+                $value = $currentNode.InnerText
 
-            if ($null -ne $globalVariableName -and $globalVariableName -ne "") {
+                if ($expression) {
+                    Write-Verbose "$($MyInvocation.MyCommand.Name):: Evaluating expression: $expression"
+                    # Evaluate the expression in the context of the current node
+                    $value = Invoke-Expression $expression
+                }
+
                 $Global:Parameters[$globalVariableName] = $value
                 Write-Verbose "$($MyInvocation.MyCommand.Name):: Stored value in global variable '$globalVariableName'."
             }
+            else {
+                $value = $currentNode
+            }
+            if ($display -eq "true") {
+                Write-Host "Extracted Value ($path): " -ForegroundColor Green
+                # Format and print the XML content with proper indentation
+                #Write-Host (PrettyPrint-Xml -XmlString $currentNode.InnerXml -Indent 4)  -ForegroundColor White
+                $value
+                Write-Host " "
+            }
+
         }
         else {
             Write-Verbose "$($MyInvocation.MyCommand.Name):: No value found for path '$path'."
@@ -854,7 +868,7 @@ function Update-OrInsertParameter {
 
         # Save the updated XML back to the file
         $xmlContent.Save($ResolvedFilePath)
-        Write-Host "Parameter '$ParamName' updated or inserted successfully in $ResolvedFilePath" -ForegroundColor Green
+        Write-Verbose "Parameter '$ParamName' updated or inserted successfully in $ResolvedFilePath"
 
         # Retrieve the parameter value for use in the script
         return $valueNode.InnerText
@@ -895,10 +909,10 @@ try {
 
             # Process the selected request file
             $processedContent = Invoke-RequestFile -FilePath $selectedOption.FilePath
-            Write-Host "Processed Content:" -ForegroundColor Green
+            Write-Host "Processing. If you want to see the request content use -Verbose mode..." -ForegroundColor Green
 
             # Format and print the XML content with proper indentation
-            Write-Host $(Format-XML $processedContent.RequestContent.OuterXml -indent 4)
+            Write-Verbose (PrettyPrint-Xml -XmlString $processedContent.RequestContent.OuterXml -RootElement "Root" -Indent 4)
             Write-Host " "
 
             # Invoke the request

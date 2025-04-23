@@ -29,7 +29,8 @@
             "UseCertificate": {
                 "enabled": false,
                 "SearchBy": "PfxCertificateAndPwd",
-                "SearchValue": "./certificates/certificate.pfx|Abcd1234$"
+                "SearchValue": "./certificates/certificate.pfx|Abcd1234$",
+                "Store": "CurrentUser\\My"
             },
             "UseProxy": {
                 "enabled": false,
