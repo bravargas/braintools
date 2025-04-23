@@ -336,7 +336,7 @@ function Invoke-RequestFile {
                 # Handle special placeholders with $
                 switch ($placeholderName) {
                     '$GUID' { $resolvedPlaceholders[$placeholderName] = [guid]::NewGuid().ToString() }
-                    '$TimeStamp' { $resolvedPlaceholders[$placeholderName] = (Get-Date).ToString('yyyy-MM-ddTHH:mm:ss') }
+                    '$TimeStamp' { $resolvedPlaceholders[$placeholderName] = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ") }
                     '$IP' { $resolvedPlaceholders[$placeholderName] = (Get-NetIPAddress -AddressFamily IPv4 | Select-Object -First 1 -ExpandProperty IPAddress) }
                     default { throw "Unknown special placeholder: $placeholderName" }
                 }
@@ -640,7 +640,7 @@ function Invoke-ProcessRestResponse {
                         $currentNode = $currentNode.$node
                     }
                     else {
-                        Write-Host "Node '$node' not found." -ForegroundColor Red
+                        Write-Verbose "Node '$node' not found."
                         $currentNode = $null
                         break
                     }
@@ -738,33 +738,36 @@ function Invoke-ProcessSoapResponse {
                     $currentNode = $currentNode
                 }
                 elseif ($currentNode.Count -eq 0) {
-                    Write-Host "Node '$node' not found." -ForegroundColor Red
+                    Write-Verbose "Node '$node' not found."
                     $currentNode = $null
                     break
                 }
             }
         }
 
-        if ($currentNode) {
-            $value = $currentNode.InnerXml
+        if ($currentNode -and -not [string]::IsNullOrWhiteSpace($currentNode.InnerText)) {
+            $value = $currentNode.InnerText
 
             if ($expression) {
                 Write-Verbose "$($MyInvocation.MyCommand.Name):: Evaluating expression: $expression"
                 # Evaluate the expression in the context of the current node
                 $value = Invoke-Expression $expression
-            }
+        }
 
+        $global:Parameters[$globalVariableName] = $value
+        Write-Verbose "$($MyInvocation.MyCommand.Name): Stored value in global variable '$globalVariableName'."
+    }
+    else {
+        $value = $currentNode
+    }
             if ($display -eq "true") {
                 Write-Host "Extracted Value ($path): " -ForegroundColor Green
                 # Format and print the XML content with proper indentation
-                Write-Host (PrettyPrint-Xml -XmlString $value -Indent 4)  -ForegroundColor White
+                #Write-Host (PrettyPrint-Xml -XmlString $currentNone.InnerXml -Indent 4)  -ForegroundColor White
+                $value
                 Write-Host " "
             }
 
-            if ($null -ne $globalVariableName -and $globalVariableName -ne "") {
-                $Global:Parameters[$globalVariableName] = $value
-                Write-Verbose "$($MyInvocation.MyCommand.Name):: Stored value in global variable '$globalVariableName'."
-            }
         }
         else {
             Write-Verbose "$($MyInvocation.MyCommand.Name):: No value found for path '$path'."
@@ -904,10 +907,10 @@ try {
 
             # Process the selected request file
             $processedContent = Invoke-RequestFile -FilePath $selectedOption.FilePath
-            Write-Host "Processed Content:" -ForegroundColor Green
+            Write-Host "Processing. If you want to see the request content use -Verbose mode..." -ForegroundColor Green
 
             # Format and print the XML content with proper indentation
-            Write-Host (PrettyPrint-Xml -XmlString $processedContent.RequestContent.OuterXml -RootElement "Root" -Indent 4) -ForegroundColor White
+            Write-Verbose (PrettyPrint-Xml -XmlString $processedContent.RequestContent.OuterXml -RootElement "Root" -Indent 4)
             Write-Host " "
 
             # Invoke the request
