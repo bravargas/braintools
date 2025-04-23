@@ -26,7 +26,6 @@
     <action>
       <path>ListOfContinentsByNameResponse.ListOfContinentsByNameResult</path>
       <display>true</display>
-      <globalVariableName>CapitalCity</globalVariableName>
     </action>
   </responseActions>
 </requestTemplate>
