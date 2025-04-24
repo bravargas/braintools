@@ -7,13 +7,13 @@
       "contentType": "application/json"
     },
     {
-        "path": "/pushnotification/delivery",
+        "path": "/delivery/api/v1.0/pushnotification/deliver",
         "method": "POST",
         "responseFile": "AlertHubDeliveryMessage.response.json",
         "contentType": "application/json"
       },    
       {
-        "path": "/pushnotification/notificationstatus",
+        "path": "/delivery/api/v1.0/pushnotification/notificationsstatus",
         "method": "POST",
         "responseFile": "AlertHubNotificationStatus.response.json",
         "contentType": "application/json"

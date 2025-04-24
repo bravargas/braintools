@@ -15,36 +15,36 @@ $menuConfig = @{
     Title  = "Welcome. Please select an option:"
     Options = @(
         @{
-            Name     = "Dog Breeds"
-            FilePath = ".\Requests\DogBreeds.request.xml"
+            Name     = "TST - Dog Breeds"
+            FilePath = ".\Requests\TST\DogBreeds.request.xml"
         },
         @{
-            Name     = "Dog Breeds Random Image"
-            FilePath = ".\Requests\DogBreedsRandomImage.request.xml"
+            Name     = "TST - Dog Breeds Random Image"
+            FilePath = ".\Requests\TST\DogBreedsRandomImage.request.xml"
         },        
         @{
-            Name     = "List Of Continents By Name"
-            FilePath = ".\Requests\ListOfContinentsByName.request.xml"
+            Name     = "TST - List Of Continents By Name"
+            FilePath = ".\Requests\TST\ListOfContinentsByName.request.xml"
         },
         @{
-            Name     = "Capital City of a Country"
-            FilePath = ".\Requests\CapitalCity.request.xml"
+            Name     = "TST - Capital City of a Country"
+            FilePath = ".\Requests\TST\CapitalCity.request.xml"
         },        
         @{
-            Name     = "Ron Swanson Quotes"
-            FilePath = ".\Requests\ron-swanson-quotes.request.xml"
+            Name     = "TST - Ron Swanson Quotes"
+            FilePath = ".\Requests\TST\ron-swanson-quotes.request.xml"
         },
         @{
-            Name     = "Alert Hub Authenticate"
-            FilePath = ".\Requests\AlertHubAuthenticate.request.xml"
+            Name     = "ALH - Alert Hub Authenticate"
+            FilePath = ".\Requests\ALH\AlertHubAuthenticate.request.xml"
         },
         @{
-            Name     = "Alert Hub Delivery Basic APNS Message"
-            FilePath = ".\Requests\AlertHubDeliveryMessage.request.xml" 
+            Name     = "ALH - Alert Hub Delivery Basic APNS Message"
+            FilePath = ".\Requests\ALH\AlertHubDeliveryMessage.request.xml" 
         },
         @{
-            Name     = "Alert Hub Notification Status"
-            FilePath = ".\Requests\AlertHubNotificationStatus.request.xml" 
+            Name     = "ALH - Alert Hub Notification Status"
+            FilePath = ".\Requests\ALH\AlertHubNotificationStatus.request.xml" 
         }                 		
     )
     

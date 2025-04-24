@@ -21,10 +21,4 @@
       <display>true</display>
     </action>
   </responseActions>
-  <parameters>
-    <parameter>
-      <name>dogBreed</name>
-      <value>boxer</value>
-    </parameter>
-  </parameters>
 </requestTemplate>

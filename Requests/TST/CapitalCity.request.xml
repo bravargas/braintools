@@ -10,21 +10,22 @@
     </header>
   </headers>
   <body>
-    <soap12:Envelope xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
-      <soap12:Body>
-        <ListOfContinentsByName xmlns="http://www.oorsprong.org/websamples.countryinfo">
-        </ListOfContinentsByName>
-      </soap12:Body>
-    </soap12:Envelope>
+    <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+      <soap:Body>
+        <CapitalCity xmlns="http://www.oorsprong.org/websamples.countryinfo">
+          <sCountryISOCode>{{CountryISOCode}}</sCountryISOCode>
+        </CapitalCity>
+      </soap:Body>
+    </soap:Envelope>
   </body>
   <responseActions>
     <action>
-      <path>ListOfContinentsByNameResponse.ListOfContinentsByNameResult.tContinent[3].sName</path>
+      <path>CapitalCityResponse.CapitalCityResult</path>
       <display>true</display>
       <globalVariableName>CapitalCity</globalVariableName>
     </action>
     <action>
-      <path>ListOfContinentsByNameResponse.ListOfContinentsByNameResult</path>
+      <path>.</path>
       <display>true</display>
     </action>
   </responseActions>

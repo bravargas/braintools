@@ -21,6 +21,4 @@
             </soap12:Body>
         </soap12:Envelope>
     </body>
-    <parameters>
-    </parameters>
-</requestTemplate>
+  </requestTemplate>

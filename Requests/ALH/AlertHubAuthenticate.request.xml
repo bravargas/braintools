@@ -16,7 +16,7 @@
       "grant_type": "client_credentials",
       "scope": "organization:{{AlertHubOrgId}},user:{{AlertHubUser}}"
       }
-    </body>
+  </body>
   <responseActions>
     <action>
       <path>access_token</path>
@@ -29,22 +29,4 @@
       <globalVariableName>token_type</globalVariableName>
     </action>
   </responseActions>
-  <parameters>
-    <parameter>
-      <name>AlertHubClientId</name>
-      <value>COMPANYPUSH1_CERT</value>
-    </parameter>
-    <parameter>
-      <name>AlertHubSecret</name>
-      <value>0xA47F2C9D1B3E45A19D084C6723BA89F0D2E7C1A3B6D8FE</value>
-    </parameter>
-    <parameter>
-      <name>AlertHubOrgId</name>
-      <value>COMPANYNKPUSH1</value>
-    </parameter>
-    <parameter>
-      <name>AlertHubUser</name>
-      <value>AAA</value>
-    </parameter>
-  </parameters>
 </requestTemplate>

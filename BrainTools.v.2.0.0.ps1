@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param (
-    [string]$Environment = "QA", # Default to "QA"
+    [string]$Environment = "MOCK", # Default to "QA"
     [string[]]$RequestFiles = $null # Optional parameter for specifying one or more request files
 )
 
@@ -55,7 +55,7 @@ function Get-ConfigPath {
     )
 
     switch ($ConfigName) {
-        "Hosts" { return "$PSScriptRoot\Config\parameters.$($Environment.ToLower()).json" }
+        "Hosts" { return "$PSScriptRoot\Config\parameters.$($Environment.ToLower()).xml" }
         "Menu" { return "$PSScriptRoot\Config\MenuConfig.ps1" }
         default { throw "Unknown configuration name: $ConfigName" }
     }
@@ -306,20 +306,36 @@ function Invoke-RequestFile {
         $requestContent = Get-Content -Path $FilePath -Raw
         Write-Verbose "$($MyInvocation.MyCommand.Name):: Loaded request file: $FilePath"
 
-        # Load the hosts configuration
+        # Load the hosts configuration (now XML)
         $hostsFilePath = Get-ConfigPath -ConfigName "Hosts"
         Test-FileExists -FilePath $hostsFilePath
-        $hostsConfig = Get-Content -Path $hostsFilePath | ConvertFrom-Json
+        [xml]$hostsConfig = Get-Content -Path $hostsFilePath -Raw
         Write-Verbose "$($MyInvocation.MyCommand.Name):: Loaded hosts file: $hostsFilePath"
 
         # Extract placeholders
         $placeholders = ([regex]::Matches($requestContent, '{{(.*?)}}') | ForEach-Object { $_.Groups[1].Value }).Trim()
         $resolvedPlaceholders = @{}
+        $inputRequiredPlaceholders = @{}
 
         # Include global request parameters
-        if ($hostsConfig.GlobalRequestParameters) {
-            foreach ($key in $hostsConfig.GlobalRequestParameters.PSObject.Properties.Name) {
-                $resolvedPlaceholders[$key] = $hostsConfig.GlobalRequestParameters.$key
+        if ($hostsConfig.Parameters.GlobalRequestParameters) {
+            foreach ($node in $hostsConfig.Parameters.GlobalRequestParameters.ChildNodes) {
+                if ($node.Attributes["isExpression"] -and $node.Attributes["isExpression"].Value -eq "true") {
+                    # Evaluate the expression in the node value
+                    $evaluatedValue = Invoke-Expression $node.InnerText
+                    $resolvedPlaceholders[$node.Name] = $evaluatedValue
+                }
+                else {
+                    $resolvedPlaceholders[$node.Name] = $node.InnerText
+                }
+            }
+        }
+
+        # Load LocalRequestParameters from parameters.<environment>.xml
+        $localParams = @{}
+        if ($hostsConfig.Parameters.LocalRequestParameters) {
+            foreach ($node in $hostsConfig.Parameters.LocalRequestParameters.ChildNodes) {
+                $localParams[$node.Name] = $node.InnerText
             }
         }
 
@@ -332,38 +348,30 @@ function Invoke-RequestFile {
         foreach ($placeholder in $placeholders) {
             $placeholderName = $placeholder.Trim('{}')
 
-            if ($placeholderName.StartsWith('$')) {
-                # Handle special placeholders with $
-                switch ($placeholderName) {
-                    '$GUID' { $resolvedPlaceholders[$placeholderName] = [guid]::NewGuid().ToString() }
-                    '$TimeStamp' { $resolvedPlaceholders[$placeholderName] = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ") }
-                    '$IP' { $resolvedPlaceholders[$placeholderName] = (Get-NetIPAddress -AddressFamily IPv4 | Select-Object -First 1 -ExpandProperty IPAddress) }
-                    default { throw "Unknown special placeholder: $placeholderName" }
-                }
-            }
-            elseif ($placeholderName.StartsWith('#')) {
+            if ($placeholderName.StartsWith('#')) {
                 # Handle host placeholders with #
                 $hostKey = $placeholderName.TrimStart('#')
-                if (-not $hostsConfig.Hosts.PSObject.Properties[$hostKey]) {
+                $hostNode = $hostsConfig.Parameters.Hosts.Host | Where-Object { $_.name -eq $hostKey }
+                if (-not $hostNode) {
                     throw "Host placeholder '$placeholderName' not found in hosts file."
                 }
-                $resolvedPlaceholders[$placeholderName] = $hostsConfig.Hosts.$hostKey.host
+                $resolvedPlaceholders[$placeholderName] = $hostNode.host
 
                 # Handle certificate if required
-                if ($hostsConfig.Hosts.$hostKey.UseCertificate -and $hostsConfig.Hosts.$hostKey.UseCertificate.enabled) {
+                if ($hostNode.UseCertificate -and $hostNode.UseCertificate.enabled -eq "true") {
                     Write-Verbose "$($MyInvocation.MyCommand.Name):: Certificate required for host '$hostKey'. Fetching certificate..."
-                    $certificate = Get-Certificate -SearchBy $hostsConfig.Hosts.$hostKey.UseCertificate.SearchBy -SearchValue $hostsConfig.Hosts.$hostKey.UseCertificate.SearchValue -Store $hostsConfig.Hosts.$hostKey.UseCertificate.Store
+                    $certificate = Get-Certificate -SearchBy $hostNode.UseCertificate.SearchBy -SearchValue $hostNode.UseCertificate.SearchValue
                     if (-not $certificate) {
                         throw "Failed to retrieve the required certificate for host '$hostKey'."
                     }
                 }
 
                 # Handle proxy if required
-                if ($hostsConfig.Hosts.$hostKey.UseProxy -and $hostsConfig.Hosts.$hostKey.UseProxy.enabled) {
+                if ($hostNode.UseProxy -and $hostNode.UseProxy.enabled -eq "true") {
                     Write-Verbose "$($MyInvocation.MyCommand.Name):: Proxy required for host '$hostKey'. Configuring proxy..."
-                    $proxyUrl = $hostsConfig.Hosts.$hostKey.UseProxy.proxyUrl
-                    $proxyUsername = $hostsConfig.Hosts.$hostKey.UseProxy.proxyUsername
-                    $proxyPassword = $hostsConfig.Hosts.$hostKey.UseProxy.proxyPassword
+                    $proxyUrl = $hostNode.UseProxy.proxyUrl
+                    $proxyUsername = $hostNode.UseProxy.proxyUsername
+                    $proxyPassword = $hostNode.UseProxy.proxyPassword
                 }
             }
             else {
@@ -372,35 +380,20 @@ function Invoke-RequestFile {
                     Write-Verbose "$($MyInvocation.MyCommand.Name):: Using global parameter for $placeholderName."
                 }
                 else {
-                    # Retrieve the default parameter value from the request file
-                    $defaultValue = if ($Global:Parameters.ContainsKey($placeholderName)) { $Global:Parameters[$placeholderName] } else { '' }
-
-                    if ([string]::IsNullOrWhiteSpace($defaultValue)) {
-                        $xmlContent = [xml]$requestContent
-                        $parametersSection = $xmlContent.SelectSingleNode("//*[local-name()='parameters']")
-                        if ($parametersSection) {
-                            $parameterNode = $parametersSection.SelectSingleNode("parameter[name='$placeholderName']")
-                            if ($parameterNode) {
-                                $valueNode = $parameterNode.SelectSingleNode("value")
-                                if ($valueNode) {
-                                    $defaultValue = $valueNode.InnerText
-                                }
-                            }
-                        }
-    
-                    }
+                    # Retrieve the default parameter value from LocalRequestParameters
+                    $defaultValue = if ($Global:Parameters.ContainsKey($placeholderName)) { $Global:Parameters[$placeholderName] } elseif ($localParams.ContainsKey($placeholderName)) { $localParams[$placeholderName] } else { '' }
 
                     # Prompt the user for input if no default value is found
                     $userInput = Read-Host "Enter the value for $placeholderName (default: $defaultValue)"
-                    $resolvedPlaceholders[$placeholderName] = if ([string]::IsNullOrWhiteSpace($userInput)) { $defaultValue } else { $userInput }
+                    $manualParameter = if ([string]::IsNullOrWhiteSpace($userInput)) { $defaultValue } else { $userInput }
+                    $resolvedPlaceholders[$placeholderName] = $manualParameter
+                    $inputRequiredPlaceholders[$placeholderName] = $manualParameter
                     $Global:Parameters[$placeholderName] = $resolvedPlaceholders[$placeholderName]
+
+                    # Update or insert the parameter in the parameters.<environment>.xml file
+                    $null = Update-OrInsertParameter -ParamName $placeholderName -ParamValue $inputRequiredPlaceholders[$placeholderName]
                 }
-
-                # Update or insert the parameter in the request file
-                $null = Update-OrInsertParameter -FilePath $FilePath -ParamName $placeholderName -ParamValue $resolvedPlaceholders[$placeholderName]
-
             }
-
         }
 
         # Replace placeholders in the request content
@@ -424,6 +417,7 @@ function Invoke-RequestFile {
         Write-Verbose "$($MyInvocation.MyCommand.Name):: END"
     }
 }
+
 function Invoke-Request {
     [CmdletBinding()]
     param (
@@ -516,44 +510,6 @@ function Invoke-Request {
     }
     finally {
         Write-Verbose "$($MyInvocation.MyCommand.Name):: END"
-    }
-}
-
-function PrettyPrint-Xml {
-    param (
-        [Parameter(Mandatory = $true)]
-        [string]$XmlString, # The XML string to format
-        [string]$RootElement = "Root", # Optional root element to wrap the XML
-        [int]$Indent = 4 # Optional indentation level
-    )
-
-    try {
-        # Remove the XML declaration if it exists
-        $XmlString = $XmlString -replace '<\?xml.*?\?>', ''
-
-        # Wrap the XML string in a single root element
-        $WrappedXmlString = "<$RootElement>$XmlString</$RootElement>"
-
-        # Load the wrapped XML string into an XML object
-        [xml]$XmlObject = $WrappedXmlString
-
-        # Create a StringWriter and XmlTextWriter for pretty printing
-        $StringWriter = New-Object System.IO.StringWriter
-        $XmlWriter = New-Object System.Xml.XmlTextWriter $StringWriter
-        $XmlWriter.Formatting = "Indented"
-        $XmlWriter.Indentation = $Indent
-
-        # Write the XML content to the XmlWriter
-        $XmlObject.WriteTo($XmlWriter)
-        $XmlWriter.Flush()
-        $StringWriter.Flush()
-
-        # Return the formatted XML as a string
-        return $StringWriter.ToString()
-    }
-    catch {
-        Write-Host "Error: $($_.Exception.Message)" -ForegroundColor Red
-        return $XmlString
     }
 }
 
@@ -852,64 +808,39 @@ function Invoke-ProcessResponse {
 
 function Update-OrInsertParameter {
     param (
-        [string]$FilePath,
         [string]$ParamName,
         [string]$ParamValue
     )
 
     try {
-        # Resolve the file path relative to $PSScriptRoot
-        $ResolvedFilePath = Join-Path -Path $PSScriptRoot -ChildPath $FilePath
-
+        # Get the parameters.<environment>.xml file path
+        $paramsFilePath = Get-ConfigPath -ConfigName "Hosts"
         # Check if the file exists
-        if (-not (Test-Path -Path $ResolvedFilePath)) {
-            throw "File not found: $ResolvedFilePath"
+        if (-not (Test-Path -Path $paramsFilePath)) {
+            throw "File not found: $paramsFilePath"
         }
-
         # Load the XML content
-        [xml]$xmlContent = Get-Content -Path $ResolvedFilePath -Raw
-
-        # Ensure the <parameters> section exists
-        $parametersSection = $xmlContent.SelectSingleNode("//*[local-name()='parameters']")
+        [xml]$xmlContent = Get-Content -Path $paramsFilePath -Raw
+        # Ensure the <LocalRequestParameters> section exists
+        $parametersSection = $xmlContent.Parameters.LocalRequestParameters
         if (-not $parametersSection) {
-            $parametersSection = $xmlContent.CreateElement("parameters")
-            if ($null -ne $xmlContent.DocumentElement) {
-                $xmlContent.DocumentElement.AppendChild($parametersSection)
-            }
-            else {
-                throw "The XML document does not have a root element to append the <parameters> section."
-            }
+            $parametersSection = $xmlContent.CreateElement("LocalRequestParameters")
+            $xmlContent.Parameters.AppendChild($parametersSection) | Out-Null
         }
-
         # Check if the parameter already exists
-        $parameterNode = $parametersSection.SelectSingleNode("parameter[name='$ParamName']")
-        if ($parameterNode) {
-            # Update the value if the parameter exists
-            $valueNode = $parameterNode.SelectSingleNode("value")
-            if ($valueNode) {
-                $valueNode.InnerText = $ParamValue
-            }
-            else {
-                # Create a <value> element if it doesn't exist
-                $valueNode = $parameterNode.AppendChild($xmlContent.CreateElement("value"))
-                $valueNode.InnerText = $ParamValue
-            }
+        $existingParamNode = $parametersSection.SelectSingleNode($ParamName)
+        if ($existingParamNode) {
+            $existingParamNode.InnerText = $ParamValue
+        } else {
+            # Insert the parameter as <parametername>value</parametername>
+            $newParamNode = $xmlContent.CreateElement($ParamName)
+            $newParamNode.InnerText = $ParamValue
+            $parametersSection.AppendChild($newParamNode) | Out-Null
         }
-        else {
-            # If the parameter does not exist, insert it
-            $newParameter = $parametersSection.AppendChild($xmlContent.CreateElement("parameter"))
-            $nameNode = $newParameter.AppendChild($xmlContent.CreateElement("name"))
-            $nameNode.InnerText = $ParamName
-            $valueNode = $newParameter.AppendChild($xmlContent.CreateElement("value"))
-            $valueNode.InnerText = $ParamValue
-        }
-
         # Save the updated XML back to the file
-        $xmlContent.Save($ResolvedFilePath)
-        Write-Verbose "Parameter '$ParamName' updated or inserted successfully in $ResolvedFilePath"
-
-        # Retrieve the parameter value for use in the script
-        return $valueNode.InnerText
+        $xmlContent.Save($paramsFilePath)
+        Write-Verbose "Parameter '$ParamName' updated or inserted successfully in $paramsFilePath"
+        return $ParamValue
     }
     catch {
         Write-ErrorLog -FunctionName $MyInvocation.MyCommand.Name -ErrorMessage $_

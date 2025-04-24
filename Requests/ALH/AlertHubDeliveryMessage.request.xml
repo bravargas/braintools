@@ -1,0 +1,37 @@
+<requestTemplate>
+  <type>REST</type>
+  <url>{{#AlertHubRestServiceURL}}</url>
+  <path>/delivery/api/v1.0/pushnotification/deliver</path>
+  <method>POST</method>
+  <headers>
+    <header>
+      <name>Content-Type</name>
+      <value>application/json</value>
+    </header>
+    <header>
+      <name>Authorization</name>
+      <value>{{token_type}} {{access_token}}</value>
+    </header>
+  </headers>
+  <body>
+    {
+    "correlationId": "{{GUID}}",
+    "appId": "{{appId}}",
+    "deviceType": "{{deviceType}}",
+    "deviceId": "{{deviceId}}",
+    "message": " {{message}} {{GUID}}",
+    "messageType": "{{messageType}}"
+    }
+  </body>
+  <responseActions>
+    <action>
+      <path>notificationId</path>
+      <display>true</display>
+      <globalVariableName>notificationId</globalVariableName>
+    </action>
+    <action>
+      <path>.</path>
+      <display>true</display>
+    </action>
+  </responseActions>
+</requestTemplate>
