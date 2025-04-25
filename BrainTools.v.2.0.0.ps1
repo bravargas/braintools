@@ -274,7 +274,7 @@ function Get-Certificate {
             }
 
             # Call Find-Certificate with the appropriate search criteria
-            Write-Verbose "$($MyInvocation.MyCommand.Name):: Searching for certificate in store: $Store with $SearchValue"
+            Write-Verbose "$($MyInvocation.MyCommand.Name):: Searching for certificate in store: $Store with $SearchBy : $SearchValue"
             $certificates = Get-ChildItem -Path "Cert:\$Store" | Where-Object {
                 $_.$SearchBy -like "*$SearchValue*"
             }
