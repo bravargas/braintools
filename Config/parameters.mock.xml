@@ -6,7 +6,7 @@
     <AlertHubOrgId>COMPANYNKPUSH1</AlertHubOrgId>
     <AlertHubUser>AAA</AlertHubUser>
     <GUID isExpression="true">[guid]::NewGuid().ToString()</GUID>
-    <TimeStamp isExpression="true">[DateTime]::Now.ToString("yyyy-MM-ddTHH:mm:ss.fffffffK")</TimeStamp>
+    <TimeStamp isExpression="true">[DateTime]::Now.ToString("yyyy-MM-ddTHH:mm:ss.fffZ")</TimeStamp>
     <IP isExpression="true">[System.Net.Dns]::GetHostAddresses($env:COMPUTERNAME)[0].IPAddressToString</IP>
   </GlobalRequestParameters>
   <LocalRequestParameters>
