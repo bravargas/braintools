@@ -56,7 +56,7 @@ function Get-ConfigPath {
 
     switch ($ConfigName) {
         "Hosts" { return "$PSScriptRoot\Config\parameters.$($Environment.ToLower()).xml" }
-        "Menu" { return "$PSScriptRoot\Config\MenuConfig.ps1" }
+        "Menu" { return "$PSScriptRoot\Config\MenuConfig.$($Environment.ToLower()).ps1" }
         default { throw "Unknown configuration name: $ConfigName" }
     }
 }
@@ -233,15 +233,18 @@ function Get-Certificate {
     Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
 
     try {
+        Write-Verbose "$($MyInvocation.MyCommand.Name):: Searching for certificate with $SearchBy : $SearchValue" 
         # Validate PfxCertificateAndPwd format
         if ($SearchBy -eq 'PfxCertificateAndPwd' -and $SearchValue -notmatch '.+\|.+') {
             throw "Invalid format for PfxCertificateAndPwd. Expected 'filename|password'."
         }
 
         if ($SearchBy -eq 'PfxCertificateAndPwd') {
+            Write-Verbose "$($MyInvocation.MyCommand.Name):: Searching for certificate in file: $SearchValue"   
             # Split the combined credential into filename and password
             $fileName, $Password = $SearchValue -split '\|' 
 
+            Write-Verbose "$($MyInvocation.MyCommand.Name):: File name: $fileName, Password: $Password"   
             # Load the certificate from the file using the combined credential
             $certificatePath = "$fileName"
 
@@ -266,10 +269,12 @@ function Get-Certificate {
         else {
             # Set the default store location if not provided. Consider to use CurrentUser\My instead
             if (-not $Store) {
+                Write-Verbose "$($MyInvocation.MyCommand.Name):: Store not provided. Using LocalMachine\My as default."
                 $Store = 'LocalMachine\My'
             }
 
             # Call Find-Certificate with the appropriate search criteria
+            Write-Verbose "$($MyInvocation.MyCommand.Name):: Searching for certificate in store: $Store with $SearchValue"
             $certificates = Get-ChildItem -Path "Cert:\$Store" | Where-Object {
                 $_.$SearchBy -like "*$SearchValue*"
             }
@@ -360,7 +365,7 @@ function Invoke-RequestFile {
                 # Handle certificate if required
                 if ($hostNode.UseCertificate -and $hostNode.UseCertificate.enabled -eq "true") {
                     Write-Verbose "$($MyInvocation.MyCommand.Name):: Certificate required for host '$hostKey'. Fetching certificate..."
-                    $certificate = Get-Certificate -SearchBy $hostNode.UseCertificate.SearchBy -SearchValue $hostNode.UseCertificate.SearchValue
+                    $certificate = Get-Certificate -SearchBy $hostNode.UseCertificate.SearchBy -SearchValue $hostNode.UseCertificate.SearchValue -Store $hostNode.UseCertificate.Store
                     if (-not $certificate) {
                         throw "Failed to retrieve the required certificate for host '$hostKey'."
                     }
@@ -483,7 +488,7 @@ function Invoke-Request {
         }
      
         # Make the HTTP request using Invoke-WebRequest
-        $response = Invoke-WebRequest @params
+        $response = Invoke-WebRequest @params -UseBasicParsing
 
         # Print the status code
         Write-Host "HTTP Status Code: $($response.StatusCode)" -ForegroundColor Cyan
@@ -831,7 +836,8 @@ function Update-OrInsertParameter {
         $existingParamNode = $parametersSection.SelectSingleNode($ParamName)
         if ($existingParamNode) {
             $existingParamNode.InnerText = $ParamValue
-        } else {
+        } 
+        else {
             # Insert the parameter as <parametername>value</parametername>
             $newParamNode = $xmlContent.CreateElement($ParamName)
             $newParamNode.InnerText = $ParamValue
@@ -864,8 +870,9 @@ try {
 
     # Keep showing the menu until the user selects the exit option
     while ($true) {
-        Show-Menu -Title $menuConfig.Title -Options $menuOptions -Header $menuConfig.Header
-        $userChoice = Get-UserChoice -MaxOption $menuOptions.Length
+        Show-Menu -Title $menuConfig.Title -Options $menuOptions -Header $menuConfig.Header -DividerLine $menuConfig.DividerLine 
+        $menuConfig.Options = $menuConfig.Options | Where-Object { $_.Name -ne $menuConfig.DividerLine}
+        $userChoice = Get-UserChoice -MaxOption $menuConfig.Options.Length
 
         if ($userChoice -eq 0) {
             Write-Host "You chose to exit." -ForegroundColor Green
