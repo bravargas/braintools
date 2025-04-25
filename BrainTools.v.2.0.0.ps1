@@ -102,7 +102,8 @@ function Show-Menu {
     param (
         [string]$Title,
         [object[]]$Options,
-        [string[]]$Header
+        [string[]]$Header,
+        [string]$DividerLine = "---"
     )
 
     Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
@@ -147,35 +148,44 @@ function Show-Menu {
         $LeftTee = [char]0x251C  # ├
         $RightTee = [char]0x2524  # ┤
 
+        $TopLine = "$TopLeft" + ("$Horizontal" * $SeparatorLength) + "$TopRight"
+        $SplitLine = "$LeftTee" + ("$Horizontal" * $SeparatorLength) + "$RightTee"
+        $BottomLine = "$BottomLeft" + ("$Horizontal" * $SeparatorLength) + "$BottomRight"
+
         $FrameColor = "Gray"
 
         # Header box
         if ($Header) {
-            Write-Host ("$TopLeft" + ("$Horizontal" * $SeparatorLength) + "$TopRight") -ForegroundColor $FrameColor
+            Write-Host ($TopLine) -ForegroundColor $FrameColor
             foreach ($line in $Header) {
                 Write-Host ("$Vertical" + $line.PadRight($SeparatorLength) + "$Vertical") -ForegroundColor Cyan
             }
-            Write-Host ("$LeftTee" + ("$Horizontal" * $SeparatorLength) + "$RightTee") -ForegroundColor $FrameColor
+            Write-Host ($SplitLine) -ForegroundColor $FrameColor
         }
 
         # Title
         Write-Host ("$Vertical" + ($TitleSpaces + $Title).PadRight($SeparatorLength) + "$Vertical") -ForegroundColor Yellow
-        Write-Host ("$LeftTee" + ("$Horizontal" * $SeparatorLength) + "$RightTee") -ForegroundColor $FrameColor
+        Write-Host ($SplitLine) -ForegroundColor $FrameColor
 
         # Menu items
+        $item = 0
         for ($i = 0; $i -lt $Options.Length; $i++) {
             $displayName = if ($Options[$i] -is [string]) {
                 $Options[$i]
-            } 
-            elseif ($Options[$i].PSObject.Properties["Name"]) {
-                $Options[$i].Name
             } 
             else {
                 "<unnamed>"
             }
 
-            $optionText = "$OptionsSpaces$('{0:D2}' -f ($i + 1))$OptionsSeparator$displayName"
-            Write-Host ("$Vertical" + $optionText.PadRight($SeparatorLength) + "$Vertical") -ForegroundColor White
+            $item++
+            if ($displayName -eq $DividerLine) {
+                Write-Host ($SplitLine) -ForegroundColor $FrameColor
+                $item--
+            }
+            else {
+                $optionText = "$OptionsSpaces$('{0:D2}' -f ($item))$OptionsSeparator$displayName"
+                Write-Host ("$Vertical" + $optionText.PadRight($SeparatorLength) + "$Vertical") -ForegroundColor White
+            }
         }
 
         # Exit (no quotes)
@@ -183,7 +193,7 @@ function Show-Menu {
         Write-Host ("$Vertical" + $exitText.PadRight($SeparatorLength) + "$Vertical") -ForegroundColor Red
 
         # Footer
-        Write-Host ("$BottomLeft" + ("$Horizontal" * $SeparatorLength) + "$BottomRight") -ForegroundColor $FrameColor
+        Write-Host ($BottomLine) -ForegroundColor $FrameColor
     }
     catch {
         Write-Error "Error in $($MyInvocation.MyCommand.Name): $_"
