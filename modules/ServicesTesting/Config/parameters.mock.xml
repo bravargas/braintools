@@ -1,0 +1,54 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Parameters>
+  <GlobalRequestParameters>
+    <AlertHubClientId>COMPANYPUSH1_CERT</AlertHubClientId>
+    <AlertHubSecret>0xA47F2C9D1B3E45A19D084C6723BA89F0D2E7C1A3B6D8FE</AlertHubSecret>
+    <AlertHubOrgId>COMPANYNKPUSH1</AlertHubOrgId>
+    <AlertHubUser>AAA</AlertHubUser>
+    <GUID isExpression="true">[guid]::NewGuid().ToString()</GUID>
+    <TimeStamp isExpression="true">[DateTime]::Now.ToString("yyyy-MM-ddTHH:mm:ss.fffZ")</TimeStamp>
+    <IP isExpression="true">[System.Net.Dns]::GetHostAddresses($env:COMPUTERNAME)[0].IPAddressToString</IP>
+  </GlobalRequestParameters>
+  <LocalRequestParameters>
+    <token_type>Bearer</token_type>
+    <access_token>XyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c</access_token>
+    <appId>com.mydomain.mobilebanking</appId>
+    <deviceType>GCM</deviceType>
+    <deviceId>dTzshoHxT3m5V6YPlA1d_o:APA91bFbN02IbHeSi9wZ78E8e3G-UmwALn3wz-NB8t7CJHyFmh3mC0r4Uw4b1Mvvb8C-KzakWvSd44HWvtKR96aZcrZz8wQkF_MD7ByXFnvrTeVF7JquWXxbdGR-uvvXADS0h8c2wvZIrHE</deviceId>
+    <message>Alert Hub Testing Direct Basic Message</message>
+    <messageType>Basic</messageType>
+    <token_Type>Bearer</token_Type>
+    <notificationId>AH-477EC9F0-5A3E-41B3-B658-BBE38FDC1A46</notificationId>
+    <dogBreed>boxer</dogBreed>
+    <CountryISOCode>CR</CountryISOCode>
+  </LocalRequestParameters>
+  <Hosts>
+    <Host name="PostManDogsRestServiceURL">
+      <host>http://localhost:8088</host>
+    </Host>
+    <Host name="RonSwansonQuotesURL">
+      <host>http://localhost:8088</host>
+    </Host>
+    <Host name="PostManSoapContinentsServiceURL">
+      <host>http://localhost:8088</host>
+      <UseCertificate enabled="true">
+        <SearchBy>PfxCertificateAndPwd</SearchBy>
+        <SearchValue>./certificates/certificate.pfx|Abcd1234$</SearchValue>
+      </UseCertificate>
+      <UseProxy enabled="false">
+        <proxyUrl>http://localhost:8866</proxyUrl>
+      </UseProxy>
+    </Host>
+    <Host name="AlertHubRestServiceURL">
+      <host>http://localhost:8088</host>
+      <UseCertificate enabled="false">
+        <SearchBy>PfxCertificateAndPwd</SearchBy>
+        <SearchValue>./certificates/certificate.pfx|Abcd1234$</SearchValue>
+        <Store>CurrentUser\My</Store>
+      </UseCertificate>
+      <UseProxy enabled="false">
+        <proxyUrl>http://localhost:8866</proxyUrl>
+      </UseProxy>
+    </Host>
+  </Hosts>
+</Parameters>
