@@ -5,6 +5,7 @@ $asciiArt = @'
   / __  / ___/ __ `/ / __ \/ / / __ \/ __ \/ / ___/
  / /_/ / /  / /_/ / / / / / / / /_/ / /_/ / (__  ) 
 /_____/_/   \__,_/_/_/ /_/_/  \____/\____/_/____/  
+                               By Brainer Vargas
 '@
 
 # Display the ASCII banner
@@ -46,7 +47,7 @@ $menuConfig = @{
             FilePath = ".\Requests\ALH\AlertHubAuthenticate.request.xml"
         },
         @{
-            Name     = "ALH - Alert Hub Delivery Basic APNS Message"
+            Name     = "ALH - Alert Hub Delivery Basic Message"
             FilePath = ".\Requests\ALH\AlertHubDeliveryMessage.request.xml" 
         },
         @{

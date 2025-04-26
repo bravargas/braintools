@@ -103,7 +103,8 @@ function Show-Menu {
         [string]$Title,
         [object[]]$Options,
         [string[]]$Header,
-        [string]$DividerLine = "---"
+        [string]$DividerLine = "---",
+        [string]$ExitOption = "Exit"
     )
 
     Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
@@ -158,13 +159,18 @@ function Show-Menu {
         if ($Header) {
             Write-Host ($TopLine) -ForegroundColor $FrameColor
             foreach ($line in $Header) {
-                Write-Host ("$Vertical" + $line.PadRight($SeparatorLength) + "$Vertical") -ForegroundColor Cyan
+                #Write-Host ("$Vertical" + $line.PadRight($SeparatorLength) + "$Vertical") -ForegroundColor Cyan
+                Write-Host ("$Vertical") -NoNewline -ForegroundColor $FrameColor
+                Write-Host ($line.PadRight($SeparatorLength)) -NoNewline -ForegroundColor Cyan
+                Write-Host ("$Vertical") -ForegroundColor $FrameColor
             }
             Write-Host ($SplitLine) -ForegroundColor $FrameColor
         }
 
         # Title
-        Write-Host ("$Vertical" + ($TitleSpaces + $Title).PadRight($SeparatorLength) + "$Vertical") -ForegroundColor Yellow
+        Write-Host ("$Vertical") -NoNewline -ForegroundColor $FrameColor
+        Write-Host (($TitleSpaces + $Title).PadRight($SeparatorLength)) -NoNewline -ForegroundColor Yellow
+        Write-Host ("$Vertical") -ForegroundColor $FrameColor
         Write-Host ($SplitLine) -ForegroundColor $FrameColor
 
         # Menu items
@@ -184,13 +190,18 @@ function Show-Menu {
             }
             else {
                 $optionText = "$OptionsSpaces$('{0:D2}' -f ($item))$OptionsSeparator$displayName"
-                Write-Host ("$Vertical" + $optionText.PadRight($SeparatorLength) + "$Vertical") -ForegroundColor White
+                Write-Host ("$Vertical") -NoNewline -ForegroundColor $FrameColor
+                Write-Host ($optionText.PadRight($SeparatorLength)) -NoNewline -ForegroundColor White
+                Write-Host ("$Vertical") -ForegroundColor $FrameColor
             }
         }
 
         # Exit (no quotes)
-        $exitText = "$OptionsSpaces" + "00$OptionsSeparator" + "Exit"
-        Write-Host ("$Vertical" + $exitText.PadRight($SeparatorLength) + "$Vertical") -ForegroundColor Red
+        $exitText = "$OptionsSpaces" + "00$OptionsSeparator" + $ExitOption
+        Write-Host ("$Vertical") -NoNewline -ForegroundColor $FrameColor
+        Write-Host ($exitText.PadRight($SeparatorLength)) -NoNewline -ForegroundColor Red
+        Write-Host ("$Vertical") -ForegroundColor $FrameColor        
+        
 
         # Footer
         Write-Host ($BottomLine) -ForegroundColor $FrameColor
@@ -880,12 +891,12 @@ try {
 
     # Keep showing the menu until the user selects the exit option
     while ($true) {
-        Show-Menu -Title $menuConfig.Title -Options $menuOptions -Header $menuConfig.Header -DividerLine $menuConfig.DividerLine 
+        Show-Menu -Title $menuConfig.Title -Options $menuOptions -Header $menuConfig.Header -DividerLine $menuConfig.DividerLine -ExitOption $menuConfig.ExitOption
         $menuConfig.Options = $menuConfig.Options | Where-Object { $_.Name -ne $menuConfig.DividerLine}
         $userChoice = Get-UserChoice -MaxOption $menuConfig.Options.Length
 
         if ($userChoice -eq 0) {
-            Write-Host "You chose to exit." -ForegroundColor Green
+            Write-Host $menuConfig.ExitMessage -ForegroundColor Green
             break
         }
         else {
