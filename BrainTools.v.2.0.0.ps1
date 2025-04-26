@@ -57,6 +57,7 @@ function Get-ConfigPath {
     switch ($ConfigName) {
         "Hosts" { return "$PSScriptRoot\Config\parameters.$($Environment.ToLower()).xml" }
         "Menu" { return "$PSScriptRoot\Config\MenuConfig.$($Environment.ToLower()).ps1" }
+        "ServicesMenu" { return "$PSScriptRoot\Config\ServicesMenu.$($Environment.ToLower()).ps1" }
         default { throw "Unknown configuration name: $ConfigName" }
     }
 }
@@ -97,141 +98,18 @@ function Resolve-Error {
     Write-Host "$FunctionName:: An error occurred: $ErrorMessage" -ForegroundColor Red
 }
 
-function Show-Menu {
+function Invoke-StandardMenu {
     [CmdletBinding()]
     param (
         [string]$Title,
-        [object[]]$Options,
-        [string[]]$Header,
-        [string]$DividerLine = "---",
-        [string]$ExitOption = "Exit"
+        [object[]]$Options
     )
 
     Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
 
     try {
-        $TitleSpaces = " " * 3
-
-        # Safely extract lengths
-        $HeaderMaxLength = ($Header | ForEach-Object { $_.Length } | Measure-Object -Maximum).Maximum
-        $OptionNames = $Options | ForEach-Object {
-            if ($_ -is [string]) {
-                $_
-            } 
-            elseif ($_.PSObject.Properties["Name"]) {
-                $_.Name
-            } 
-            else {
-                "<unnamed>"
-            }
-        }
-        $OptionsMaxLength = ($OptionNames | ForEach-Object { $_.Length } | Measure-Object -Maximum).Maximum
-        $OptionsSeparator = " $([char]0x2500) "  # ─
-        $OptionsSpaces = " " * 4
-        $ItemMaxLength = $OptionsMaxLength + $Options.Length.ToString().Length + $OptionsSeparator.Length + $OptionsSpaces.Length
-        $TitleMaxLength = $TitleSpaces.Length + $Title.Length
-
-        $SeparatorLength = [int](
-            @($HeaderMaxLength, $ItemMaxLength, $TitleMaxLength | Where-Object { $_ -ne $null }) |
-            Measure-Object -Maximum |
-            Select-Object -ExpandProperty Maximum
-        )
-
-        # Box drawing chars
-        $TopLeft = [char]0x250C  # ┌
-        $TopRight = [char]0x2510  # ┐
-        $BottomLeft = [char]0x2514  # └
-        $BottomRight = [char]0x2518  # ┘
-        $Horizontal = [char]0x2500  # ─
-        $Vertical = [char]0x2502  # │
-        $Tee = [char]0x252C  # ┬
-        $Cross = [char]0x253C  # ┼
-        $LeftTee = [char]0x251C  # ├
-        $RightTee = [char]0x2524  # ┤
-
-        $TopLine = "$TopLeft" + ("$Horizontal" * $SeparatorLength) + "$TopRight"
-        $SplitLine = "$LeftTee" + ("$Horizontal" * $SeparatorLength) + "$RightTee"
-        $BottomLine = "$BottomLeft" + ("$Horizontal" * $SeparatorLength) + "$BottomRight"
-
-        $FrameColor = "Gray"
-
-        # Header box
-        if ($Header) {
-            Write-Host ($TopLine) -ForegroundColor $FrameColor
-            foreach ($line in $Header) {
-                #Write-Host ("$Vertical" + $line.PadRight($SeparatorLength) + "$Vertical") -ForegroundColor Cyan
-                Write-Host ("$Vertical") -NoNewline -ForegroundColor $FrameColor
-                Write-Host ($line.PadRight($SeparatorLength)) -NoNewline -ForegroundColor Cyan
-                Write-Host ("$Vertical") -ForegroundColor $FrameColor
-            }
-            Write-Host ($SplitLine) -ForegroundColor $FrameColor
-        }
-
-        # Title
-        Write-Host ("$Vertical") -NoNewline -ForegroundColor $FrameColor
-        Write-Host (($TitleSpaces + $Title).PadRight($SeparatorLength)) -NoNewline -ForegroundColor Yellow
-        Write-Host ("$Vertical") -ForegroundColor $FrameColor
-        Write-Host ($SplitLine) -ForegroundColor $FrameColor
-
-        # Menu items
-        $item = 0
-        for ($i = 0; $i -lt $Options.Length; $i++) {
-            $displayName = if ($Options[$i] -is [string]) {
-                $Options[$i]
-            } 
-            else {
-                "<unnamed>"
-            }
-
-            $item++
-            if ($displayName -eq $DividerLine) {
-                Write-Host ($SplitLine) -ForegroundColor $FrameColor
-                $item--
-            }
-            else {
-                $optionText = "$OptionsSpaces$('{0:D2}' -f ($item))$OptionsSeparator$displayName"
-                Write-Host ("$Vertical") -NoNewline -ForegroundColor $FrameColor
-                Write-Host ($optionText.PadRight($SeparatorLength)) -NoNewline -ForegroundColor White
-                Write-Host ("$Vertical") -ForegroundColor $FrameColor
-            }
-        }
-
-        # Exit (no quotes)
-        $exitText = "$OptionsSpaces" + "00$OptionsSeparator" + $ExitOption
-        Write-Host ("$Vertical") -NoNewline -ForegroundColor $FrameColor
-        Write-Host ($exitText.PadRight($SeparatorLength)) -NoNewline -ForegroundColor Red
-        Write-Host ("$Vertical") -ForegroundColor $FrameColor        
-        
-
-        # Footer
-        Write-Host ($BottomLine) -ForegroundColor $FrameColor
-    }
-    catch {
-        Write-Error "Error in $($MyInvocation.MyCommand.Name): $_"
-    }
-    finally {
-        Write-Verbose "$($MyInvocation.MyCommand.Name):: END"
-    }
-}
-
-function Get-UserChoice {
-    [CmdletBinding()]
-    param (
-        [int]$MaxOption
-    )
-
-    Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
-
-    try {
-        while ($true) {
-            $choice = Read-Host "Please enter your choice (0-$MaxOption)"
-            if ($choice -match '^\d+$' -and [int]$choice -ge 0 -and [int]$choice -le $MaxOption) {
-                return [int]$choice
-            }
-            else {
-                Write-Host "Invalid choice. Please enter a number between 0 and $MaxOption." -ForegroundColor Red
-            }
-        }
+        # Display the menu with default options from the configuration file
+        Show-Menu -Title $Title -Options $Options -Header $menuConfig.Header -DividerLine $menuConfig.DividerLine -ExitOption $menuConfig.ExitOption
     }
     catch {
         Write-ErrorLog -FunctionName $MyInvocation.MyCommand.Name -ErrorMessage $_
@@ -240,6 +118,7 @@ function Get-UserChoice {
         Write-Verbose "$($MyInvocation.MyCommand.Name):: END"
     }
 }
+
 function Get-Certificate {
     [CmdletBinding()]
     param (
@@ -874,60 +753,332 @@ function Update-OrInsertParameter {
     }
 }
 
+function Invoke-ServicesMenu {
+    [CmdletBinding()]
+    param ()
+
+    try {
+        Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
+
+        # Import the menu configuration
+        . (Get-ConfigPath -ConfigName "ServicesMenu")
+
+        # Extract the 'Name' property from each option
+        $menuOptions = $servicesMenu.Options | ForEach-Object { $_.Name }
+
+        # Keep showing the menu until the user selects the exit option
+        while ($true) {
+            Invoke-StandardMenu -Title $menuConfig.Title -Options $menuOptions
+            $servicesMenu.Options = $servicesMenu.Options | Where-Object { $_.Name -ne $menuConfig.DividerLine }
+            $userChoice = Get-UserChoice -MaxOption $servicesMenu.Options.Length
+
+            if ($userChoice -eq 0) {
+                Write-Host $menuConfig.ExitMessage -ForegroundColor Green
+                break
+            }
+            else {
+                $selectedOption = $servicesMenu.Options[$userChoice - 1]
+                Write-Host "You selected: $($selectedOption.Name)" -ForegroundColor Cyan
+                Write-Host "File Path: $($selectedOption.FilePath)" -ForegroundColor Yellow
+
+                # Process the selected request file
+                $processedContent = Invoke-RequestFile -FilePath $selectedOption.FilePath
+                Write-Host "Processing. If you want to see the request content use -Verbose mode..." -ForegroundColor Green
+
+                # Format and print the XML content with proper indentation
+                Write-Verbose (PrettyPrint-Xml -XmlString $processedContent.RequestContent.OuterXml -RootElement "Root" -Indent 4)
+                Write-Host " "
+
+                # Invoke the request
+                $response = Invoke-Request -RequestContent $processedContent.RequestContent -Certificate $processedContent.Certificate -ProxyUrl $processedContent.ProxyUrl -ProxyUsername $processedContent.ProxyUsername -ProxyPassword $processedContent.ProxyPassword
+
+                # Print the HTTP status code
+                if ($response -is [System.Net.HttpWebResponse]) {
+                    Write-Host "HTTP Status Code: $($response.StatusCode)" -ForegroundColor Cyan
+                }
+
+                # Process the response using Invoke-ProcessResponse
+                if ($response) {
+                    Write-Verbose "Response:"
+                    Write-Verbose $response                
+                    Invoke-ProcessResponse -ResponseContent $response -RequestTemplate $processedContent.RequestContent
+                }            
+            }
+        }
+
+    }
+    catch {
+        Write-Host "$($MyInvocation.MyCommand.Name):: An error occurred: $_" -ForegroundColor Red
+        Write-Verbose "$($MyInvocation.MyCommand.Name):: Error details: $($_.Exception.Message)"
+    }
+    finally {
+        Write-Verbose "$($MyInvocation.MyCommand.Name):: END"
+    }
+}
+
+
+# SQL Section START
+function Invoke-DatabaseQueriesMenu {
+    [CmdletBinding()]
+    param ()
+
+    try {
+        Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
+        while ($true) {
+            #Clear-Host
+            $menuOptions = @("Scripts Menu", "List Tables", "Switch or refresh catalog")
+            Invoke-StandardMenu -Title $menuConfig.Title -Options $menuOptions
+
+            $choice = Get-UserChoice -MaxOption $menuOptions.Length
+            switch ($choice) {
+                "1" { Invoke-ScriptsMenu }
+                "2" { Invoke-TablesMenu }
+                "3" { Select-Catalog -ConnectionStrings $connectionStrings }
+                "0" { return }
+                default { Write-Host "Invalid option. Please try again." -ForegroundColor Red }
+            }
+        }
+    }
+    catch {
+        Write-Host "$($MyInvocation.MyCommand.Name):: An error occurred: $_" -ForegroundColor Red
+        Write-Verbose "$($MyInvocation.MyCommand.Name):: Error details: $($_.Exception.Message)"
+    }
+    finally {
+        Write-Verbose "$($MyInvocation.MyCommand.Name):: END"
+    }
+}
+
+function Invoke-ScriptsMenu {
+    [CmdletBinding()]
+    param ()
+
+    try {
+        Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
+
+        $scriptPath = Join-Path -Path $PSScriptRoot -ChildPath "SQL\scripts"
+        #$scriptPath = Join-Path -Path $scriptPath -ChildPath "$global:SelectedSystem"
+
+        $scripts = Get-ChildItem -Path $scriptPath -Filter "*.sql"
+        while ($true) {
+            #Clear-Host
+
+            $counter = 1
+            $menuOptions = @() # Initialise the array
+
+            foreach ($script in $scripts) {
+                $shortScriptName = $script.Name.Replace(".sql", "")
+                $menuOptions += $shortScriptName # Add to the array
+                $counter++
+            }
+
+            $menuTitle = "Scripts Menu"
+            Invoke-StandardMenu -Title $menuTitle -Options $menuOptions
+
+            $choice = Get-UserChoice -MaxOption $menuOptions.Length
+
+            if ($choice -eq "0") {
+                return
+            }
+            elseif ($choice -match '^\d+$' -and [int]$choice -le $scripts.Count) {
+                $selectedScript = $scripts[[int]$choice - 1]
+                #Invoke-SqlScript -ScriptPath $selectedScript.FullName -SkipShowDataTable $SkipShowDataTable -SkipSaveDataTable $SkipSaveDataTable
+                Invoke-SqlScript -ScriptPath $selectedScript.FullName 
+            }
+            else {
+                Write-Host "Invalid option. Please try again." -ForegroundColor Red
+            }
+        }
+    }
+    catch {
+        Write-Host "$($MyInvocation.MyCommand.Name):: An error occurred: $_" -ForegroundColor Red
+        Write-Verbose "$($MyInvocation.MyCommand.Name):: Error details: $($_.Exception.Message)"
+    }
+    finally {
+        Write-Verbose "$($MyInvocation.MyCommand.Name):: END"
+    }
+}
+
+function Invoke-SqlScript {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$ScriptPath,
+        [Parameter(Mandatory = $false)]
+        [bool]$SkipShowDataTable = $false,
+        [Parameter(Mandatory = $false)]
+        [bool]$SkipSaveDataTable = $false
+    )
+
+    try {
+        Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
+
+        # Load the SQL file content
+        $scriptContent = Get-Content -Path $ScriptPath -Raw
+
+        # Find all tags in the SQL file contents
+        $tags = ([regex]::matches($scriptContent, "(\{{.*?\}})").captures | ForEach-Object { $_.Value })
+
+        # Get user input for each tag
+        $tagValues = Get-TagValues -tags $tags
+
+        # Replace tags with user input values
+        foreach ($tag in $tags) {
+            $scriptContent = $scriptContent -replace [regex]::Escape($tag), $tagValues[$tag]
+        }
+
+        $baseName = [System.IO.Path]::GetFileNameWithoutExtension($ScriptPath)
+        Invoke-Query -Query $scriptContent -BaseName $baseName -SkipShowDataTable $SkipShowDataTable -SkipSaveDataTable $SkipSaveDataTable
+    }
+    catch {
+        Write-Host "$($MyInvocation.MyCommand.Name):: An error occurred: $_" -ForegroundColor Red
+        Write-Verbose "$($MyInvocation.MyCommand.Name):: Error details: $($_.Exception.Message)"
+    }
+    finally {
+        Write-Verbose "$($MyInvocation.MyCommand.Name):: END"
+    }
+}
+
+function Invoke-Query {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$Query,
+        [Parameter(Mandatory = $true)]
+        [string]$BaseName,
+        [Parameter(Mandatory = $false)]
+        [bool]$SkipShowDataTable = $false,
+        [Parameter(Mandatory = $false)]
+        [bool]$SkipSaveDataTable = $false
+    )
+
+    if ($SkipShowDataTable -and $SkipSaveDataTable) {
+        throw "You cannot skip both Show-DataTable and Save-DataTable."
+    }
+
+    try {
+        Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
+        $results = Get-SqlData -query $Query
+
+        if ($results) {
+            if (-not $SkipShowDataTable) {
+                Show-DataTable -DataTable $results -DisplayMode "GridView" -Title $BaseName
+            }
+            if (-not $SkipSaveDataTable) {
+                Save-DataTable -BaseName $BaseName -QueryResults $results
+            }
+        }
+        else {
+            Write-Host "No results returned"
+            Read-Host -Prompt "Press any key to continue..."
+        }
+    }
+    catch {
+        Write-Host "$($MyInvocation.MyCommand.Name):: An error occurred: $_" -ForegroundColor Red
+        Write-Verbose "$($MyInvocation.MyCommand.Name):: Error details: $($_.Exception.Message)"
+    }
+    finally {
+        Write-Verbose "$($MyInvocation.MyCommand.Name):: END"
+    }
+}
+
+function Save-DataTable {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$BaseName,
+        [Parameter(Mandatory = $true)]
+        [System.Array]$QueryResults
+    )
+
+    try {
+        Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
+
+        $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+
+        $outputPath = Join-Path -Path $PSScriptRoot -ChildPath "results"
+        $outputPath = Join-Path -Path $outputPath -ChildPath "$global:SelectedSystem"
+
+        $outputFile = Join-Path -Path $outputPath -ChildPath "$($BaseName)_$($timestamp).csv"
+
+        Export-ToCSV -dataTable $QueryResults -outputFilePath $outputFile
+    }
+    catch {
+        Write-Host "$($MyInvocation.MyCommand.Name):: An error occurred: $_" -ForegroundColor Red
+        Write-Verbose "$($MyInvocation.MyCommand.Name):: Error details: $($_.Exception.Message)"
+    }
+    finally {
+        Write-Verbose "$($MyInvocation.MyCommand.Name):: END"
+    }
+}
+
+# SQL Section END
+
+
+function Invoke-UserMenu {
+    [CmdletBinding()]
+    param ()
+
+    try {
+        Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
+        while ($true) {
+            #Clear-Host
+            $menuOptions = @("SOAP and REST Services Testing", "Database Queries")
+            Invoke-StandardMenu -Title $menuConfig.Title -Options $menuOptions
+
+            $choice = Get-UserChoice -MaxOption $menuOptions.Length
+            switch ($choice) {
+                "1" { Invoke-ServicesMenu }
+                "2" { Invoke-DatabaseQueriesMenu }
+                "3" { Select-Catalog -ConnectionStrings $connectionStrings }
+                "0" { return }
+                default { Write-Host "Invalid option. Please try again." -ForegroundColor Red }
+            }
+        }
+    }
+    catch {
+        Write-Host "$($MyInvocation.MyCommand.Name):: An error occurred: $_" -ForegroundColor Red
+        Write-Verbose "$($MyInvocation.MyCommand.Name):: Error details: $($_.Exception.Message)"
+    }
+    finally {
+        Write-Verbose "$($MyInvocation.MyCommand.Name):: END"
+    }
+}
+
 try {
     Clear-Host
     Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
 
     Set-Location -Path $PSScriptRoot
 
-    # Import the menu configuration
+
+    $global:ScriptVersion = "v2.0.0"
+    $global:ModuleVersion = "2.7"
+
+    $moduleName = "UtilsModule.$global:ModuleVersion"
+    $modulePath = "..\library\$moduleName.psm1"
+
+    # Remove the module if it is already loaded
+    if (Get-Module -Name $moduleName) {
+        Remove-Module -Name $moduleName
+        Write-Verbose "Module '$moduleName' has been removed."
+    }
+    else {
+        Write-Verbose "Module '$moduleName' is not loaded."
+    }
+
+    # Import the latest version of the module
+    Import-Module $modulePath
+    Write-Verbose "Module '$moduleName' has been imported from '$modulePath'."
+
+    # Import the menu configuration. This one is global and will be used in all menus
     . (Get-ConfigPath -ConfigName "Menu")
 
     # Example usage of the Environment parameter
     Write-Verbose "$($MyInvocation.MyCommand.Name):: Using environment: $Environment"
 
-    # Extract the 'Name' property from each option
-    $menuOptions = $menuConfig.Options | ForEach-Object { $_.Name }
+    Invoke-UserMenu
 
-    # Keep showing the menu until the user selects the exit option
-    while ($true) {
-        Show-Menu -Title $menuConfig.Title -Options $menuOptions -Header $menuConfig.Header -DividerLine $menuConfig.DividerLine -ExitOption $menuConfig.ExitOption
-        $menuConfig.Options = $menuConfig.Options | Where-Object { $_.Name -ne $menuConfig.DividerLine}
-        $userChoice = Get-UserChoice -MaxOption $menuConfig.Options.Length
 
-        if ($userChoice -eq 0) {
-            Write-Host $menuConfig.ExitMessage -ForegroundColor Green
-            break
-        }
-        else {
-            $selectedOption = $menuConfig.Options[$userChoice - 1]
-            Write-Host "You selected: $($selectedOption.Name)" -ForegroundColor Cyan
-            Write-Host "File Path: $($selectedOption.FilePath)" -ForegroundColor Yellow
-
-            # Process the selected request file
-            $processedContent = Invoke-RequestFile -FilePath $selectedOption.FilePath
-            Write-Host "Processing. If you want to see the request content use -Verbose mode..." -ForegroundColor Green
-
-            # Format and print the XML content with proper indentation
-            Write-Verbose (PrettyPrint-Xml -XmlString $processedContent.RequestContent.OuterXml -RootElement "Root" -Indent 4)
-            Write-Host " "
-
-            # Invoke the request
-            $response = Invoke-Request -RequestContent $processedContent.RequestContent -Certificate $processedContent.Certificate -ProxyUrl $processedContent.ProxyUrl -ProxyUsername $processedContent.ProxyUsername -ProxyPassword $processedContent.ProxyPassword
-
-            # Print the HTTP status code
-            if ($response -is [System.Net.HttpWebResponse]) {
-                Write-Host "HTTP Status Code: $($response.StatusCode)" -ForegroundColor Cyan
-            }
-
-            # Process the response using Invoke-ProcessResponse
-            if ($response) {
-                Write-Verbose "Response:"
-                Write-Verbose $response                
-                Invoke-ProcessResponse -ResponseContent $response -RequestTemplate $processedContent.RequestContent
-            }            
-        }
-    }
 }
 catch {
     Write-ErrorLog -FunctionName $MyInvocation.MyCommand.Name -ErrorMessage $_
