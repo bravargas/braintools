@@ -17,7 +17,7 @@
     <deviceId>dTzshoHxT3m5V6YPlA1d_o:APA91bFbN02IbHeSi9wZ78E8e3G-UmwALn3wz-NB8t7CJHyFmh3mC0r4Uw4b1Mvvb8C-KzakWvSd44HWvtKR96aZcrZz8wQkF_MD7ByXFnvrTeVF7JquWXxbdGR-uvvXADS0h8c2wvZIrHE</deviceId>
     <message>Alert Hub Testing Direct Basic Message</message>
     <messageType>Basic</messageType>
-    <token_Type>0</token_Type>
+    <token_Type>Bearer</token_Type>
     <notificationId>AH-477EC9F0-5A3E-41B3-B658-BBE38FDC1A46</notificationId>
     <dogBreed>boxer</dogBreed>
     <CountryISOCode>CR</CountryISOCode>

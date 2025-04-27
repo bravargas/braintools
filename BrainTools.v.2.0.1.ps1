@@ -53,12 +53,14 @@ function Import-RequiredModules {
         foreach ($modulePath in $ModulePaths) {
 
             $moduleName = [System.IO.Path]::GetFileNameWithoutExtension($modulePath)
+            Write-Verbose "$($MyInvocation.MyCommand.Name):: Trying to load module $moduleName from $modulePath"
+
             if (-not (Get-Module -Name $moduleName -ListAvailable)) {
                 Import-Module -Force $modulePath -ErrorAction Stop
-                Write-Host "$($MyInvocation.MyCommand.Name):: Imported module: $modulePath"
+                Write-Verbose "$($MyInvocation.MyCommand.Name):: Imported module: $modulePath"
             }
             else {
-                Write-Host "$($MyInvocation.MyCommand.Name):: Module already loaded: $moduleName"
+                Write-Verbose "$($MyInvocation.MyCommand.Name):: Module already loaded: $moduleName"
             }
         }
       
@@ -72,27 +74,6 @@ function Import-RequiredModules {
     }      
 }
 
-function Invoke-StandardMenu {
-    [CmdletBinding()]
-    param (
-        [string]$Title,
-        [object[]]$Options
-    )
-
-    Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
-
-    try {
-        # Display the menu with default options from the configuration file
-        Show-Menu -Title $Title -Options $Options -Header $menuConfig.Header -DividerLine $menuConfig.DividerLine -ExitOption $menuConfig.ExitOption
-    }
-    catch {
-        Write-ErrorLog -FunctionName $MyInvocation.MyCommand.Name -ErrorMessage $_
-    }
-    finally {
-        Write-Verbose "$($MyInvocation.MyCommand.Name):: END"
-    }
-}
-
 function Invoke-UserMenu {
     [CmdletBinding()]
     param ()
@@ -102,12 +83,12 @@ function Invoke-UserMenu {
         while ($true) {
             #Clear-Host
             $menuOptions = @("SOAP and REST Services Testing", "Database Queries")
-            Invoke-StandardMenu -Title $menuConfig.Title -Options $menuOptions
+            Show-Menu -Title $menuConfig.Title -Options $menuOptions -Header $menuConfig.Header -DividerLine $menuConfig.DividerLine -ExitOption $menuConfig.ExitOption
 
             $choice = Get-UserChoice -MaxOption $menuOptions.Length
             switch ($choice) {
-                "1" { Invoke-ServicesMenu }
-                "2" { Invoke-DatabaseQueriesMenu }
+                "1" { Invoke-ServicesMenu -MenuConfig $menuConfig }
+                "2" { Invoke-DatabaseQueriesMenu -MenuConfig $menuConfig }
                 "3" { Select-Catalog -ConnectionStrings $connectionStrings }
                 "0" { return }
                 default { Write-Host "Invalid option. Please try again." -ForegroundColor Red }
@@ -138,7 +119,13 @@ try {
         ".\modules\DBQueries\DBQueries.1.0.0.psm1"
     )
 
+    # Set the environment for the modules
+    Set-ServicesEnvironment -Environment $Environment
+
+    Set-DBQueriesEnvironment -Environment $Environment
+
     # Import the menu configuration
+    Write-Verbose "$($MyInvocation.MyCommand.Name):: Get-ServicesConfigPath: Menu"
     . (Get-ServicesConfigPath -ConfigName "Menu")
 
     Invoke-UserMenu

@@ -1,18 +1,45 @@
+$script:Environment = $null
+
+function Set-ServicesEnvironment {
+    param ($Environment)
+    Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
+
+    try { 
+        $script:Environment = $Environment
+    }
+    catch {
+        Write-Host "$($MyInvocation.MyCommand.Name):: An error occurred: $_" -ForegroundColor Red
+    }
+    finally {
+        Write-Verbose "$($MyInvocation.MyCommand.Name):: END"
+    }
+}
+
 # Centralized configuration paths
 function Get-ServicesConfigPath {
     param (
-        [string]$ConfigName
+        [string]$ConfigName 
     )
 
     Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
 
     try {    
 
+        Write-Verbose "$($MyInvocation.MyCommand.Name):: Looking for configuration file for $ConfigName"
         switch ($ConfigName) {
-            "Hosts" { return "$PSScriptRoot\Config\parameters.$($Environment.ToLower()).xml" }
-            "Menu" { return "$PSScriptRoot\Config\MenuConfig.$($Environment.ToLower()).ps1" }
-            "ServicesMenu" { return "$PSScriptRoot\Config\ServicesMenu.$($Environment.ToLower()).ps1" }
-            default { throw "Unknown configuration name: $ConfigName" }
+            "Hosts" { 
+                return "$PSScriptRoot\Config\parameters.$($script:Environment.ToLower()).xml" 
+            }
+            "Menu" { 
+                return "$PSScriptRoot\Config\MenuConfig.$($script:Environment.ToLower()).ps1" 
+            }
+            "ServicesMenu" { 
+                return "$PSScriptRoot\Config\ServicesMenu.$($script:Environment.ToLower()).ps1" 
+            }
+            default { 
+                Write-Verbose "$($MyInvocation.MyCommand.Name):: Unknown configuration name: $ConfigName" -ForegroundColor Red
+                throw "Unknown configuration name: $ConfigName" 
+            }
         }
     }
     catch {
@@ -549,7 +576,9 @@ function Update-OrInsertParameter {
 
 function Invoke-ServicesMenu {
     [CmdletBinding()]
-    param ()
+    param (
+        $MenuConfig
+    )
 
     try {
         Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
@@ -562,7 +591,8 @@ function Invoke-ServicesMenu {
 
         # Keep showing the menu until the user selects the exit option
         while ($true) {
-            Invoke-StandardMenu -Title $menuConfig.Title -Options $menuOptions
+            Show-Menu -Title $menuConfig.Title -Options $menuOptions -Header $menuConfig.Header -DividerLine $menuConfig.DividerLine -ExitOption $menuConfig.ExitOption
+
             $servicesMenu.Options = $servicesMenu.Options | Where-Object { $_.Name -ne $menuConfig.DividerLine }
             $userChoice = Get-UserChoice -MaxOption $servicesMenu.Options.Length
 

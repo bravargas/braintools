@@ -1,3 +1,19 @@
+$script:Environment = $null
+
+function Set-DBQueriesEnvironment {
+    param ($Environment)
+    Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
+
+    try { 
+        $script:Environment = $Environment
+    }
+    catch {
+        Write-Host "$($MyInvocation.MyCommand.Name):: An error occurred: $_" -ForegroundColor Red
+    }
+    finally {
+        Write-Verbose "$($MyInvocation.MyCommand.Name):: END"
+    }
+}
 function Get-DBQueriesConfigPath {
     param (
         [string]$ConfigName
@@ -8,7 +24,7 @@ function Get-DBQueriesConfigPath {
     try {    
 
         switch ($ConfigName) {
-            "SQLServerConnection" { return "$PSScriptRoot\Config\SQLServerConnection.$($Environment.ToLower()).xml" }
+            "SQLServerConnection" { return "$PSScriptRoot\Config\SQLServerConnection.$($script:Environment.ToLower()).xml" }
             default { throw "Unknown configuration name: $ConfigName" }
         }
     }
@@ -22,7 +38,9 @@ function Get-DBQueriesConfigPath {
 
 function Invoke-DatabaseQueriesMenu {
     [CmdletBinding()]
-    param ()
+    param (
+        $MenuConfig
+    )
 
     try {
         Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
@@ -44,14 +62,13 @@ function Invoke-DatabaseQueriesMenu {
 
         while ($true) {
             #Clear-Host
-            $menuOptions = @("Scripts Menu", "List Tables", "Switch or refresh catalog")
-            Invoke-StandardMenu -Title $menuConfig.Title -Options $menuOptions
+            $menuOptions = @("Scripts Menu", "List Tables")
+            Show-Menu -Title $Title -Options $menuOptions -Header $menuConfig.Header -DividerLine $menuConfig.DividerLine -ExitOption $menuConfig.ExitOption
 
             $choice = Get-UserChoice -MaxOption $menuOptions.Length
             switch ($choice) {
-                "1" { Invoke-ScriptsMenu }
-                "2" { Invoke-TablesMenu }
-                "3" { Select-Catalog -ConnectionStrings $connectionStrings }
+                "1" { Invoke-ScriptsMenu -MenuConfig $menuConfig}
+                "2" { Invoke-TablesMenu -MenuConfig $menuConfig }
                 "0" { return }
                 default { Write-Host "Invalid option. Please try again." -ForegroundColor Red }
             }
@@ -68,7 +85,9 @@ function Invoke-DatabaseQueriesMenu {
 
 function Invoke-ScriptsMenu {
     [CmdletBinding()]
-    param ()
+    param (
+        $menuConfig
+    )
 
     try {
         Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
@@ -90,7 +109,7 @@ function Invoke-ScriptsMenu {
             }
 
             $menuTitle = "Scripts Menu"
-            Invoke-StandardMenu -Title $menuTitle -Options $menuOptions
+            Show-Menu -Title $menuTitle -Options $menuOptions -Header $menuConfig.Header -DividerLine $menuConfig.DividerLine -ExitOption $menuConfig.ExitOption
 
             $choice = Get-UserChoice -MaxOption $menuOptions.Length
 
@@ -231,7 +250,9 @@ function Save-DataTable {
 
 function Invoke-TablesMenu {
     [CmdletBinding()]
-    param ()
+    param (
+        $menuConfig
+    )
 
     try {
         Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
@@ -250,7 +271,8 @@ function Invoke-TablesMenu {
             }
 
             $menuTitle = "DB Tables List Menu"
-            Show-Menu -Title $menuTitle -Options $menuOptions
+            Show-Menu -Title $menuTitle -Options $menuOptions -Header $menuConfig.Header -DividerLine $menuConfig.DividerLine -ExitOption $menuConfig.ExitOption
+
 
 
             $choice = Get-UserChoice -MaxOption $menuOptions.Length
