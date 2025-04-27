@@ -1661,6 +1661,24 @@ function Format-JsonObject {
     }	    
 }
 
+# Helper function to check if a file exists
+function Test-FileExists {
+    param (
+        [string]$FilePath
+    )
+    
+    Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
+
+    try {
+        if (-not (Test-Path -Path $FilePath)) {
+            throw "$($MyInvocation.MyCommand.Name):: File not found: $FilePath"
+        }
+    }
+    finally {
+        Write-Verbose "$($MyInvocation.MyCommand.Name):: END"
+    }
+
+}
 
 #Export-ModuleMember -Function Initialize-Logger, Write-Log, Get-Certificate, Test-Url, Set-XMLPlaceholders, Read-ConfigurationDetails, Format-XML, Get-UserChoice, Show-Menu, Rename-HashtableKeys, Open-SQLConnection, Close-SQLConnection, Get-SqlData, Export-ToCSV, Show-DataTable, Get-TagValues, Show-Progress, Get-ConfigValues,Start-SOAPRequest, Submit-SOAPRequest, Read-MachineConfigurationDetails
-Export-ModuleMember -Function Initialize-Logger, Write-Log, Get-Certificate, Test-Url, Set-XMLPlaceholders, Read-ConfigurationDetails, Format-XML, Get-UserChoice, Show-MenuLegacy, Rename-HashtableKeys, Open-SQLConnection, Close-SQLConnection, Get-SqlData, Export-ToCSV, Show-DataTable, Get-TagValues, Show-Progress, Get-ConfigValues, Start-SOAPRequest, Submit-SOAPRequest, Read-MachineConfigurationDetails, CheckConnectivity, Get-CertificateDetails, Get-PrivateKeyUsers, Start-RestRequest, Submit-RestRequest, Update-JsonValues, Update-XmlValues, Show-Menu, Invoke-PrettyPrintXml
+Export-ModuleMember -Function Initialize-Logger, Write-Log, Get-Certificate, Test-Url, Set-XMLPlaceholders, Read-ConfigurationDetails, Format-XML, Get-UserChoice, Show-MenuLegacy, Rename-HashtableKeys, Open-SQLConnection, Close-SQLConnection, Get-SqlData, Export-ToCSV, Show-DataTable, Get-TagValues, Show-Progress, Get-ConfigValues, Start-SOAPRequest, Submit-SOAPRequest, Read-MachineConfigurationDetails, CheckConnectivity, Get-CertificateDetails, Get-PrivateKeyUsers, Start-RestRequest, Submit-RestRequest, Update-JsonValues, Update-XmlValues, Show-Menu, Invoke-PrettyPrintXml, Test-FileExists

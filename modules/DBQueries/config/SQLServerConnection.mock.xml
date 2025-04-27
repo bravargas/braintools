@@ -1,0 +1,7 @@
+<Configurations>
+  <Configuration>
+    <System>Localhost</System>
+    <XPath>//Configuration/Environment/Database/ConnectionString</XPath>
+  </Configuration>
+  <ConfigFilePath>D:\Users\brava\Documents\GitHub\braintools\modules\DBQueries\config\SystemConfig-localhost.xml</ConfigFilePath>
+</Configurations>

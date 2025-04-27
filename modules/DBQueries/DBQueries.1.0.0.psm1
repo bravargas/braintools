@@ -1,9 +1,47 @@
+function Get-DBQueriesConfigPath {
+    param (
+        [string]$ConfigName
+    )
+
+    Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
+
+    try {    
+
+        switch ($ConfigName) {
+            "SQLServerConnection" { return "$PSScriptRoot\Config\SQLServerConnection.$($Environment.ToLower()).xml" }
+            default { throw "Unknown configuration name: $ConfigName" }
+        }
+    }
+    catch {
+        Write-Host "$($MyInvocation.MyCommand.Name):: An error occurred: $_" -ForegroundColor Red
+    }
+    finally {
+        Write-Verbose "$($MyInvocation.MyCommand.Name):: END"
+    }    
+}
+
 function Invoke-DatabaseQueriesMenu {
     [CmdletBinding()]
     param ()
 
     try {
         Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
+
+        # Load the hosts configuration (now XML)
+        $SQLServerConnectionFilePath = Get-DBQueriesConfigPath -ConfigName "SQLServerConnection"
+        Test-FileExists -FilePath $SQLServerConnectionFilePath
+        [xml]$SQLServerConnection = Get-Content -Path $SQLServerConnectionFilePath -Raw
+        Write-Verbose "$($MyInvocation.MyCommand.Name):: Loaded SQLServerConnection file: $SQLServerConnectionFilePath"
+        $XPath = $SQLServerConnection.Configurations.Configuration.XPath
+        $ConfigFilePath = $SQLServerConnection.Configurations.ConfigFilePath
+
+        # Check if the request file exists
+        Test-FileExists -FilePath $ConfigFilePath        
+
+        $connectionString = Get-ConfigValues -XPath $XPath -ConfigFilePath $ConfigFilePath
+        # Open the SQL connection
+        $global:connection = Open-SQLConnection -connectionString $connectionString
+
         while ($true) {
             #Clear-Host
             $menuOptions = @("Scripts Menu", "List Tables", "Switch or refresh catalog")
@@ -203,16 +241,16 @@ function Invoke-TablesMenu {
         while ($true) {
             #Clear-Host
             
-        $counter = 1
-        $menuOptions = @() # Initialise the array
-        foreach ($table in $tables) {
-            $tableFullName = $table.FullName
-            $menuOptions += $tableFullName # Add to the array
-            $counter++
-        }
+            $counter = 1
+            $menuOptions = @() # Initialise the array
+            foreach ($table in $tables) {
+                $tableFullName = $table.FullName
+                $menuOptions += $tableFullName # Add to the array
+                $counter++
+            }
 
-        $menuTitle = "DB Tables List Menu"
-        Show-Menu -Title $menuTitle -Options $menuOptions
+            $menuTitle = "DB Tables List Menu"
+            Show-Menu -Title $menuTitle -Options $menuOptions
 
 
             $choice = Get-UserChoice -MaxOption $menuOptions.Length
@@ -222,12 +260,43 @@ function Invoke-TablesMenu {
             }
             elseif ($choice -match '^\d+$' -and [int]$choice -le $tables.Count) {
                 $selectedTable = $tables[[int]$choice - 1].FullName
-                Invoke-TableQuery -TableName $selectedTable -SkipShowDataTable $SkipShowDataTable -SkipSaveDataTable $SkipSaveDataTable
+                #Invoke-TableQuery -TableName $selectedTable -SkipShowDataTable $SkipShowDataTable -SkipSaveDataTable $SkipSaveDataTable
+                Invoke-TableQuery -TableName $selectedTable -SkipShowDataTable $false -SkipSaveDataTable $false
             }
             else {
                 Write-Host "Invalid option. Please try again." -ForegroundColor Red
             }
         }
+    }
+    catch {
+        Write-Host "$($MyInvocation.MyCommand.Name):: An error occurred: $_" -ForegroundColor Red
+        Write-Verbose "$($MyInvocation.MyCommand.Name):: Error details: $($_.Exception.Message)"
+    }
+    finally {
+        Write-Verbose "$($MyInvocation.MyCommand.Name):: END"
+    }
+}
+
+function Invoke-TableQuery {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$TableName,
+        [Parameter(Mandatory = $false)]
+        [bool]$SkipShowDataTable = $false,
+        [Parameter(Mandatory = $false)]
+        [bool]$SkipSaveDataTable = $false
+    )
+
+    try {
+        Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
+        if ([string]::IsNullOrWhiteSpace($TableName)) {
+            throw "TableName cannot be null or empty."
+        }
+
+        $query = "SELECT TOP 500 * FROM $TableName;"
+        Write-Verbose "Executing query: $query"
+        Invoke-Query -Query $query -BaseName $TableName -SkipShowDataTable $SkipShowDataTable -SkipSaveDataTable $SkipSaveDataTable
     }
     catch {
         Write-Host "$($MyInvocation.MyCommand.Name):: An error occurred: $_" -ForegroundColor Red

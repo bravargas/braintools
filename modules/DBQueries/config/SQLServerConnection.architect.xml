@@ -1,0 +1,6 @@
+<Configurations>
+  <Configuration>
+    <System>Architect</System>
+    <XPath>//connectionStrings/add/@connectionString</XPath>
+  </Configuration>
+</Configurations>

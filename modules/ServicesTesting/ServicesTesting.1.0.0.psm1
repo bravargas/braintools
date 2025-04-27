@@ -23,28 +23,6 @@ function Get-ServicesConfigPath {
     }    
 }
 
-# Helper function to check if a file exists
-function Test-FileExists {
-    param (
-        [string]$FilePath
-    )
-    
-    Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
-
-    try {
-        if (-not (Test-Path -Path $FilePath)) {
-            throw "File not found: $FilePath"
-        }
-    }
-    catch {
-        Write-Host "$($MyInvocation.MyCommand.Name):: An error occurred: $_" -ForegroundColor Red
-    }
-    finally {
-        Write-Verbose "$($MyInvocation.MyCommand.Name):: END"
-    }
-
-}
-
 # Helper function to resolve placeholders
 function Resolve-Placeholders {
     param (
