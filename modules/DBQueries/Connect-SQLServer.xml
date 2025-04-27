@@ -1,0 +1,10 @@
+<Configurations>
+  <Configuration>
+    <System>Localhost</System>
+    <XPath>//Configuration/Environment/Database/ConnectionString</XPath>
+  </Configuration>
+  <Configuration>
+    <System>Architect</System>
+    <XPath>//connectionStrings/add/@connectionString</XPath>
+  </Configuration>
+</Configurations>
