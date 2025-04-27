@@ -38,9 +38,7 @@ function Get-DBQueriesConfigPath {
 
 function Invoke-DatabaseQueriesMenu {
     [CmdletBinding()]
-    param (
-        $MenuConfig
-    )
+    param ()
 
     try {
         Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
@@ -63,12 +61,12 @@ function Invoke-DatabaseQueriesMenu {
         while ($true) {
             #Clear-Host
             $menuOptions = @("Scripts Menu", "List Tables")
-            Show-Menu -Title $Title -Options $menuOptions -Header $menuConfig.Header -DividerLine $menuConfig.DividerLine -ExitOption $menuConfig.ExitOption
+            Show-Menu -Options $menuOptions
 
             $choice = Get-UserChoice -MaxOption $menuOptions.Length
             switch ($choice) {
-                "1" { Invoke-ScriptsMenu -MenuConfig $menuConfig}
-                "2" { Invoke-TablesMenu -MenuConfig $menuConfig }
+                "1" { Invoke-ScriptsMenu }
+                "2" { Invoke-TablesMenu }
                 "0" { return }
                 default { Write-Host "Invalid option. Please try again." -ForegroundColor Red }
             }
@@ -85,9 +83,7 @@ function Invoke-DatabaseQueriesMenu {
 
 function Invoke-ScriptsMenu {
     [CmdletBinding()]
-    param (
-        $menuConfig
-    )
+    param ()
 
     try {
         Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
@@ -109,7 +105,7 @@ function Invoke-ScriptsMenu {
             }
 
             $menuTitle = "Scripts Menu"
-            Show-Menu -Title $menuTitle -Options $menuOptions -Header $menuConfig.Header -DividerLine $menuConfig.DividerLine -ExitOption $menuConfig.ExitOption
+            Show-Menu -Title $menuTitle -Options $menuOptions
 
             $choice = Get-UserChoice -MaxOption $menuOptions.Length
 
@@ -250,9 +246,7 @@ function Save-DataTable {
 
 function Invoke-TablesMenu {
     [CmdletBinding()]
-    param (
-        $menuConfig
-    )
+    param ()
 
     try {
         Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
@@ -271,7 +265,7 @@ function Invoke-TablesMenu {
             }
 
             $menuTitle = "DB Tables List Menu"
-            Show-Menu -Title $menuTitle -Options $menuOptions -Header $menuConfig.Header -DividerLine $menuConfig.DividerLine -ExitOption $menuConfig.ExitOption
+            Show-Menu -Title $menuTitle -Options $menuOptions
 
 
 

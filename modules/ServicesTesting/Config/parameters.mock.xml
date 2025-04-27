@@ -19,7 +19,7 @@
     <messageType>Basic</messageType>
     <token_Type>Bearer</token_Type>
     <notificationId>AH-477EC9F0-5A3E-41B3-B658-BBE38FDC1A46</notificationId>
-    <dogBreed>boxer</dogBreed>
+    <dogBreed>0</dogBreed>
     <CountryISOCode>CR</CountryISOCode>
   </LocalRequestParameters>
   <Hosts>
@@ -41,7 +41,7 @@
     </Host>
     <Host name="AlertHubRestServiceURL">
       <host>http://localhost:8088</host>
-      <UseCertificate enabled="false">
+      <UseCertificate enabled="true">
         <SearchBy>PfxCertificateAndPwd</SearchBy>
         <SearchValue>./certificates/certificate.pfx|Abcd1234$</SearchValue>
         <Store>CurrentUser\My</Store>

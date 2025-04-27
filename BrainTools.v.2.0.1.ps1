@@ -83,13 +83,12 @@ function Invoke-UserMenu {
         while ($true) {
             #Clear-Host
             $menuOptions = @("SOAP and REST Services Testing", "Database Queries")
-            Show-Menu -Title $menuConfig.Title -Options $menuOptions -Header $menuConfig.Header -DividerLine $menuConfig.DividerLine -ExitOption $menuConfig.ExitOption
+            Show-Menu -Options $menuOptions
 
             $choice = Get-UserChoice -MaxOption $menuOptions.Length
             switch ($choice) {
-                "1" { Invoke-ServicesMenu -MenuConfig $menuConfig }
-                "2" { Invoke-DatabaseQueriesMenu -MenuConfig $menuConfig }
-                "3" { Select-Catalog -ConnectionStrings $connectionStrings }
+                "1" { Invoke-ServicesMenu }
+                "2" { Invoke-DatabaseQueriesMenu }
                 "0" { return }
                 default { Write-Host "Invalid option. Please try again." -ForegroundColor Red }
             }
@@ -123,10 +122,6 @@ try {
     Set-ServicesEnvironment -Environment $Environment
 
     Set-DBQueriesEnvironment -Environment $Environment
-
-    # Import the menu configuration
-    Write-Verbose "$($MyInvocation.MyCommand.Name):: Get-ServicesConfigPath: Menu"
-    . (Get-ServicesConfigPath -ConfigName "Menu")
 
     Invoke-UserMenu
 

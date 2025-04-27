@@ -4,10 +4,11 @@ $DividerLine = "---" # Divider line
 # Menu Configuration
 $servicesMenu = @{
     Title  = "Welcome. Please select an option:"
+    DividerLine = "---"
     Options = @(
         @{
             Name     = "TST - Dog Breeds"
-            FilePath = ".\Requests\TST\DogBreeds.request.xml"
+            FilePath = "Requests\TST\DogBreeds.request.xml"
         },
         @{
             Name     = "TST - Dog Breeds Random Image"

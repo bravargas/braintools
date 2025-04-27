@@ -576,9 +576,7 @@ function Update-OrInsertParameter {
 
 function Invoke-ServicesMenu {
     [CmdletBinding()]
-    param (
-        $MenuConfig
-    )
+    param ()
 
     try {
         Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
@@ -591,13 +589,13 @@ function Invoke-ServicesMenu {
 
         # Keep showing the menu until the user selects the exit option
         while ($true) {
-            Show-Menu -Title $menuConfig.Title -Options $menuOptions -Header $menuConfig.Header -DividerLine $menuConfig.DividerLine -ExitOption $menuConfig.ExitOption
+            Show-Menu -Options $menuOptions
 
-            $servicesMenu.Options = $servicesMenu.Options | Where-Object { $_.Name -ne $menuConfig.DividerLine }
+            $servicesMenu.Options = $servicesMenu.Options | Where-Object { $_.Name -ne $servicesMenu.DividerLine }
             $userChoice = Get-UserChoice -MaxOption $servicesMenu.Options.Length
 
             if ($userChoice -eq 0) {
-                Write-Host $menuConfig.ExitMessage -ForegroundColor Green
+                Write-Host "Exiting the menu. Adios!" -ForegroundColor Green
                 break
             }
             else {
@@ -606,7 +604,8 @@ function Invoke-ServicesMenu {
                 Write-Host "File Path: $($selectedOption.FilePath)" -ForegroundColor Yellow
 
                 # Process the selected request file
-                $processedContent = Invoke-RequestFile -FilePath $selectedOption.FilePath
+                $requestPath = Join-Path -Path $PSScriptRoot -ChildPath $selectedOption.FilePath
+                $processedContent = Invoke-RequestFile -FilePath $requestPath
                 Write-Host "Processing. If you want to see the request content use -Verbose mode..." -ForegroundColor Green
 
                 # Format and print the XML content with proper indentation

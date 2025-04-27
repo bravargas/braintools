@@ -315,25 +315,25 @@ function Submit-RestRequest {
         $headers["Content-Type"] = $ContentType
 
         try {
-        # Prepare the request parameters
-        $requestParams = @{
-            Uri     = $fullUrl
-            Method  = $RequestContent.Method
-            Headers = $headers
-        }
+            # Prepare the request parameters
+            $requestParams = @{
+                Uri     = $fullUrl
+                Method  = $RequestContent.Method
+                Headers = $headers
+            }
 
-        # Add the body if provided
-        if ($RequestContent.PSObject.Properties.Name -contains 'Body') {
-            $requestParams.Body = $RequestContent.Body | ConvertTo-Json -Depth 10
-        }
+            # Add the body if provided
+            if ($RequestContent.PSObject.Properties.Name -contains 'Body') {
+                $requestParams.Body = $RequestContent.Body | ConvertTo-Json -Depth 10
+            }
 
-        # Add the certificate if provided
-        if ($Certificate) {
-            $requestParams.Certificate = $Certificate
-        }
+            # Add the certificate if provided
+            if ($Certificate) {
+                $requestParams.Certificate = $Certificate
+            }
 
-        # Execute the REST API call
-        $response = Invoke-WebRequest @requestParams -UseBasicParsing
+            # Execute the REST API call
+            $response = Invoke-WebRequest @requestParams -UseBasicParsing
         }
         catch {
             if ($_.Exception.Message -like "*SSL/TLS*") {
@@ -349,7 +349,7 @@ function Submit-RestRequest {
         }
 
         # Convert the response content to JSON if applicable
-<#         if ($response.Content) {
+        <#         if ($response.Content) {
             return $response.Content | ConvertFrom-Json
         } #>
 
@@ -1204,7 +1204,7 @@ function Show-MenuLegacy {
 function Show-Menu {
     [CmdletBinding()]
     param (
-        [string]$Title,
+        [string]$Title = "Welcome. Please select an option:",
         [object[]]$Options,
         [string[]]$Header,
         [string]$DividerLine = "---",
@@ -1214,6 +1214,20 @@ function Show-Menu {
     Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
 
     try {
+
+        if (-not $Header) {
+            # BrainTools ASCII Banner
+            $asciiArt = @'
+    ____             _     ______            __    
+   / __ )_________ _(_)___/_  __/___  ____  / /____
+  / __  / ___/ __ `/ / __ \/ / / __ \/ __ \/ / ___/
+ / /_/ / /  / /_/ / / / / / / / /_/ / /_/ / (__  ) 
+/_____/_/   \__,_/_/_/ /_/_/  \____/\____/_/____/  
+'@
+
+            $Header = $asciiArt -split "`r?`n"
+        }
+
         $TitleSpaces = " " * 3
 
         # Safely extract lengths
