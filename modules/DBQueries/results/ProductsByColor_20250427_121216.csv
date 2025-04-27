@@ -1,5 +1,0 @@
-﻿"ProductID"	"Name"	"ProductNumber"	"Color"	"StandardCost"	"ListPrice"	"Size"	"Weight"	"ProductCategoryID"	"ProductModelID"	"SellStartDate"	"SellEndDate"	"DiscontinuedDate"	"ThumbNailPhoto"	"ThumbnailPhotoFileName"	"rowguid"	"ModifiedDate"
-"709"	"Mountain Bike Socks, M"	"SO-B909-M"	"White"	"3.3963"	"9.5000"	"M"	""	"27"	"18"	"7/1/2005 12:00:00 AM"	"6/30/2006 12:00:00 AM"	""	"System.Byte[]"	"no_image_available_small.gif"	"18f95f47-1540-4e02-8f1f-cc1bcb6828d0"	"3/11/2008 10:01:36 AM"
-"710"	"Mountain Bike Socks, L"	"SO-B909-L"	"White"	"3.3963"	"9.5000"	"L"	""	"27"	"18"	"7/1/2005 12:00:00 AM"	"6/30/2006 12:00:00 AM"	""	"System.Byte[]"	"no_image_available_small.gif"	"161c035e-21b3-4e14-8e44-af508f35d80a"	"3/11/2008 10:01:36 AM"
-"874"	"Racing Socks, M"	"SO-R809-M"	"White"	"3.3623"	"8.9900"	"M"	""	"27"	"24"	"7/1/2007 12:00:00 AM"	""	""	"System.Byte[]"	"no_image_available_small.gif"	"b9c7eb0a-1dd1-4a1d-b4c3-1dad83a8ea7e"	"3/11/2008 10:01:36 AM"
-"875"	"Racing Socks, L"	"SO-R809-L"	"White"	"3.3623"	"8.9900"	"L"	""	"27"	"24"	"7/1/2007 12:00:00 AM"	""	""	"System.Byte[]"	"no_image_available_small.gif"	"c0a16305-74b7-4fae-b5c9-3e8bd0e44762"	"3/11/2008 10:01:36 AM"

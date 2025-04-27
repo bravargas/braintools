@@ -1,0 +1,5 @@
+# Ignorar todos los archivos en results/
+modules/DBQueries/results/*
+
+# ¡Pero no ignores este archivo especial!
+!modules/DBQueries/results/.gitkeep
