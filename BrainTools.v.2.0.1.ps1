@@ -82,7 +82,7 @@ function Invoke-UserMenu {
         Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
         while ($true) {
             #Clear-Host
-            $menuOptions = @("SOAP and REST Services Testing", "Database Queries")
+            $menuOptions = @("SOAP and REST Services Testing","---", "Database Queries","---")
             Show-Menu -Options $menuOptions
 
             $choice = Get-UserChoice -MaxOption $menuOptions.Length

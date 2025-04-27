@@ -19,7 +19,7 @@
     <messageType>Basic</messageType>
     <token_Type>Bearer</token_Type>
     <notificationId>AH-477EC9F0-5A3E-41B3-B658-BBE38FDC1A46</notificationId>
-    <dogBreed>0</dogBreed>
+    <dogBreed>boxer</dogBreed>
     <CountryISOCode>CR</CountryISOCode>
   </LocalRequestParameters>
   <Hosts>
@@ -33,7 +33,7 @@
       <host>http://localhost:8088</host>
       <UseCertificate enabled="true">
         <SearchBy>PfxCertificateAndPwd</SearchBy>
-        <SearchValue>./certificates/certificate.pfx|Abcd1234$</SearchValue>
+        <SearchValue>modules\ServicesTesting\Certificates\certificate.pfx|Abcd1234$</SearchValue>
       </UseCertificate>
       <UseProxy enabled="false">
         <proxyUrl>http://localhost:8866</proxyUrl>
@@ -43,7 +43,7 @@
       <host>http://localhost:8088</host>
       <UseCertificate enabled="true">
         <SearchBy>PfxCertificateAndPwd</SearchBy>
-        <SearchValue>./certificates/certificate.pfx|Abcd1234$</SearchValue>
+        <SearchValue>modules\ServicesTesting\Certificates\certificate.pfx|Abcd1234$</SearchValue>
         <Store>CurrentUser\My</Store>
       </UseCertificate>
       <UseProxy enabled="false">
