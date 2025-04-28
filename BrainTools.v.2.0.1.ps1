@@ -82,13 +82,14 @@ function Invoke-UserMenu {
         Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
         while ($true) {
             #Clear-Host
-            $menuOptions = @("SOAP and REST Services Testing","---", "Database Queries","---")
+            $menuOptions = @("SOAP and REST Services Testing","---", "Database Queries","---", "Test Endpoints", "---")
             Show-Menu -Options $menuOptions
 
             $choice = Get-UserChoice -MaxOption $menuOptions.Length
             switch ($choice) {
                 "1" { Invoke-ServicesMenu }
                 "2" { Invoke-DatabaseQueriesMenu }
+                "3" { Test-Endpoints -ConfigFilePath ".\modules\EndPoints\web.config"  }
                 "0" { return }
                 default { Write-Host "Invalid option. Please try again." -ForegroundColor Red }
             }
@@ -115,7 +116,8 @@ try {
     Import-RequiredModules -ModulePaths @(
         ".\modules\ServicesTesting\ServicesTesting.1.0.0.psm1",
         ".\modules\General\UtilsModule.2.7.psm1",
-        ".\modules\DBQueries\DBQueries.1.0.0.psm1"
+        ".\modules\DBQueries\DBQueries.1.0.0.psm1",
+        ".\modules\EndPoints\EndpointsTest.0.0.1.psm1"
     )
 
     # Set the environment for the modules
