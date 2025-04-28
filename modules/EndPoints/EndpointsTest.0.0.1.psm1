@@ -1,6 +1,6 @@
 # Version: 0.0.1
 
-$script:IncludeEmptyAddresses = $false
+$script:IncludeEmptyAddresses = $true
 $script:results = @()
 
 
@@ -65,11 +65,13 @@ function Get-Bindings {
 function Invoke-AnalyzeEndpoint {
     param (
         [string]$address,
+        [string]$serviceName,
         [string]$binding,
         [string]$bindingConfig,
         [string]$contract,
         [string]$name,
-        [string]$location
+        [string]$location,
+        [string]$behavior
     )
 
     if (-not $script:IncludeEmptyAddresses -and ([string]::IsNullOrWhiteSpace($address))) {
@@ -92,6 +94,11 @@ function Invoke-AnalyzeEndpoint {
         $status = "MEX endpoint detected"
         $statusColor = "Yellow"
     }
+    elseif ($address -eq "") {    
+        $address = "N/A"
+        $status = "N/A"
+        $statusColor = "Gray"
+    }
     elseif ($address -match '^https?://') {
         try {
             $response = Invoke-WebRequest -Uri $address -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop
@@ -107,33 +114,43 @@ function Invoke-AnalyzeEndpoint {
     $certColor = if ($requiresCert) { "Red" } else { "Gray" }
 
     # Console output
-    Write-Host "------------------------------------------------------------------" -ForegroundColor Yellow
+    Write-Host "------------------------------------------------------------------------------------------------------------------------------------" -ForegroundColor Yellow
     Write-Host "Address:               " -ForegroundColor Yellow -NoNewline
     Write-Host "$address" -ForegroundColor White    
+    Write-Host "Service Name:              " -ForegroundColor Yellow -NoNewline
+    Write-Host "$serViceName" -ForegroundColor Magenta
     Write-Host "Location:              " -ForegroundColor Yellow -NoNewline
-    Write-Host "$location" -ForegroundColor Blue
+    Write-Host "$location" -ForegroundColor White
     Write-Host "Type:                  " -ForegroundColor Yellow -NoNewline
     Write-Host "$type" -ForegroundColor Magenta
+    Write-Host "Contract:              " -ForegroundColor Yellow -NoNewline
+    Write-Host "$contract" -ForegroundColor Magenta
     Write-Host "Binding:               " -ForegroundColor Yellow -NoNewline
     Write-Host "$binding" -ForegroundColor Cyan
     Write-Host "Binding Config:        " -ForegroundColor Yellow -NoNewline
     Write-Host "$bindingConfig" -ForegroundColor Cyan
+    Write-Host "Behavior:              " -ForegroundColor Yellow -NoNewline
+    Write-Host "$behavior" -ForegroundColor White
     Write-Host "Security Mode:         " -ForegroundColor Yellow -NoNewline
     Write-Host "$securityMode" -ForegroundColor $securityColor
     Write-Host "Requires Certificate:  " -ForegroundColor Yellow -NoNewline
     Write-Host "$(if ($requiresCert) { 'Yes' } else { 'No' })" -ForegroundColor $certColor
     Write-Host "Status:                " -ForegroundColor Yellow -NoNewline
     Write-Host "$status" -ForegroundColor $statusColor
-    #Write-Host "------------------------------------------------------------------"
+    #Write-Host "------------------------------------------------------------------------------------------------------------------------------------"
     Write-Host ""
 
     # Save result
     $script:results += [PSCustomObject]@{
         Address             = $address        
+        ServiceName         = $serviceName
+        Name                = $name
         Location            = $location
         Type                = $type
+        Contract            = $contract
         Binding             = $binding
         BindingConfig       = $bindingConfig
+        Behavior            = $behavior
         SecurityMode        = $securityMode
         RequiresCertificate = if ($requiresCert) { "Yes" } else { "No" }
         Status              = $status
@@ -149,9 +166,10 @@ function Invoke-AnalyzeEndpoints {
 
     Write-Verbose "$($MyInvocation.MyCommand.Name):: START"    
     try {
+        $itemCount = 0
         foreach ($type in @(
-                @{ Endpoints = $config.configuration."system.serviceModel".services.service.endpoint; Location = "Service" },
-                @{ Endpoints = $config.configuration."system.serviceModel".client.endpoint; Location = "Client" }
+                @{ Locations = $config.configuration."system.serviceModel".services.service; Location = "Service" },
+                @{ Locations = $config.configuration."system.serviceModel".client; Location = "Client" }
             )) {
             foreach ($endpoint in $type.Endpoints) {
                 Invoke-AnalyzeEndpoint -address $endpoint.address `
@@ -195,35 +213,25 @@ function Get-ConfigFilePath {
     Add-Type -AssemblyName System.Windows.Forms
 
     if (-not $InitialConfigFilePath -or -not (Test-Path -Path $InitialConfigFilePath)) {
-        $result = [System.Windows.Forms.MessageBox]::Show(
-            "Cannot continue without a valid configuration file. Do you want to browse for the file?",
-            "Configuration File Missing",
-            [System.Windows.Forms.MessageBoxButtons]::YesNo,
-            [System.Windows.Forms.MessageBoxIcon]::Warning
-        )
+        Write-Host "Configuration file not found or not provided. Prompting user to select a file." -ForegroundColor Yellow
+        
+        $openFileDialog = New-Object System.Windows.Forms.OpenFileDialog
+        $openFileDialog.InitialDirectory = $PSScriptRoot
+        $openFileDialog.Filter = "Configuration files (*.config)|*.config|XML files (*.xml)|*.xml|All files (*.*)|*.*"
+        $openFileDialog.Multiselect = $false
 
-        if ($result -eq [System.Windows.Forms.DialogResult]::Yes) {
-            $openFileDialog = New-Object System.Windows.Forms.OpenFileDialog
-            $openFileDialog.InitialDirectory = $PSScriptRoot
-            $openFileDialog.Filter = "Configuration files (*.config)|*.config|XML files (*.xml)|*.xml|All files (*.*)|*.*"
-            $openFileDialog.Multiselect = $false
+        $dialogResult = $openFileDialog.ShowDialog()
 
-            $dialogResult = $openFileDialog.ShowDialog()
-
-            if ($dialogResult -eq [System.Windows.Forms.DialogResult]::OK) {
-                $ConfigFilePath = $openFileDialog.FileName
-                Write-Host "Selected configuration file: $ConfigFilePath"
-                return $ConfigFilePath
-            }
-            else {
-                Write-Host "No file selected. Exiting script."
-                exit
-            }
+        if ($dialogResult -eq [System.Windows.Forms.DialogResult]::OK) {
+            $ConfigFilePath = $openFileDialog.FileName
+            Write-Host "Selected configuration file: $ConfigFilePath"
+            return $ConfigFilePath
         }
         else {
-            Write-Host "User chose not to browse for a file. Exiting script."
+            Write-Host "No file selected. Exiting script."
             exit
         }
+
     }
     else {
         Write-Verbose "Configuration file found: $InitialConfigFilePath"
@@ -238,12 +246,19 @@ function Test-Endpoints {
 
     Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
     try {
+
+        $script:results = @()
         
         $ConfigFilePath = Get-ConfigFilePath -InitialConfigFilePath $ConfigFilePath
+        if (-not $ConfigFilePath) {
+            Write-Host "No configuration file provided. Exiting script."
+            return
+        }
+        Write-Verbose "$($MyInvocation.MyCommand.Name):: Configuration file: $ConfigFilePath"
         [xml]$config = Get-Content -Path $ConfigFilePath
         Get-Bindings -config $config
         Invoke-AnalyzeEndpoints -config $config
-        Export-Results
+        Export-Results -ConfigFilePath $ConfigFilePath
     }
     catch {
         Write-Host "$($MyInvocation.MyCommand.Name):: An error occurred: $_" -ForegroundColor Red
