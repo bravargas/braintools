@@ -118,7 +118,7 @@ function Invoke-AnalyzeEndpoint {
     Write-Host "Address:               " -ForegroundColor Yellow -NoNewline
     Write-Host "$address" -ForegroundColor White    
     Write-Host "Service Name:              " -ForegroundColor Yellow -NoNewline
-    Write-Host "$serViceName" -ForegroundColor Magenta
+    Write-Host "$serviceName" -ForegroundColor Magenta
     Write-Host "Location:              " -ForegroundColor Yellow -NoNewline
     Write-Host "$location" -ForegroundColor White
     Write-Host "Type:                  " -ForegroundColor Yellow -NoNewline
@@ -172,12 +172,13 @@ function Invoke-AnalyzeEndpoints {
                 @{ Locations = $config.configuration."system.serviceModel".client; Location = "Client" }
             )) {
             foreach ($location in $type.Locations) {
-                $ServiceName = if ($type.Location -eq "Service") { $locationname} else { "N/A" } # Only the services have a name
+                $ServiceName = if ($type.Location -eq "Service") { $location.name} else { "N/A" } # Only the services have a name
+                
                 foreach ($endpoint in $location.endpoint) {
-                    itemCount++
-                    Write-Verbose "$($MyInvocation.MyCommand.Name):: Processing endpoint $itemCount in $($type.Location)" -ForegroundColor Green
+                    $itemCount++
+                    Write-Host "$($MyInvocation.MyCommand.Name):: Processing endpoint $itemCount in $($type.Location)" -ForegroundColor Green
                     Invoke-AnalyzeEndpoint -address $endpoint.address `
-                        -ServiceName $ServiceName
+                        -ServiceName $ServiceName `
                         -binding $endpoint.binding `
                         -bindingConfig $endpoint.bindingConfiguration `
                         -contract $endpoint.contract `
@@ -185,6 +186,7 @@ function Invoke-AnalyzeEndpoints {
                         -location $type.Location `
                         -behavior $endpoint.behaviorConfiguration
                 }
+            }
         }
     }
     catch {
@@ -196,7 +198,7 @@ function Invoke-AnalyzeEndpoints {
 
 }
 
-Function Export-Results {
+function Export-Results {
     [CmdletBinding()]
     param (
     	[Parameter()]
@@ -212,18 +214,18 @@ Function Export-Results {
         # Export results to CSV and JSON
         $timestamp = Get-Date -Format "yyyyMMdd_HHmm"
         $hostname = $env:COMPUTERNAME
-        $safehost = $hostname -replace '[^a-zA-Z0-9_-]', '_' # Por si acaso, limpiamos caracteres especiales
+        $safeHost = $hostname -replace '[^a-zA-Z0-9_-]', '_' # Por si acaso, limpiamos caracteres especiales
     
         $resultsPath = Join-Path -Path $PSScriptRoot -ChildPath "results"
-        if (-not (Test-Path $resultsPath)) {
+        if (-not (Test-Path -Path $resultsPath)) {
             New-Item -Path $resultsPath -ItemType Directory | Out-Null
         }
     
-        Write-Host "Exporting results from $configFilePath to $resultsPath" -ForegroundColor Green
-        Write-Host
+        Write-Host "Exporting results from $ConfigFilePath to $resultsPath" -ForegroundColor Green
+        Write-Host "------------------------------------------------------------------------------------------------------------------------------------" -ForegroundColor Yellow
     
-        $csvPath = Join-Path -Path $resultsPath -ChildPath "endpoints_summary_${safehost}_$timestamp.csv"
-        $jsonPath = Join-Path -Path $resultsPath -ChildPath "endpoints_summary_${safehost}_$timestamp.json"
+        $csvPath = Join-Path -Path $resultsPath -ChildPath "endpoints_summary_${safeHost}_$timestamp.csv"
+        $jsonPath = Join-Path -Path $resultsPath -ChildPath "endpoints_summary_${safeHost}_$timestamp.json"
     
         $script:results | Export-Csv -Path $csvPath -NoTypeInformation -Encoding UTF8
         $script:results | ConvertTo-Json -Depth 3 | Out-File -FilePath $jsonPath -Encoding UTF8
