@@ -171,14 +171,20 @@ function Invoke-AnalyzeEndpoints {
                 @{ Locations = $config.configuration."system.serviceModel".services.service; Location = "Service" },
                 @{ Locations = $config.configuration."system.serviceModel".client; Location = "Client" }
             )) {
-            foreach ($endpoint in $type.Endpoints) {
-                Invoke-AnalyzeEndpoint -address $endpoint.address `
-                    -binding $endpoint.binding `
-                    -bindingConfig $endpoint.bindingConfiguration `
-                    -contract $endpoint.contract `
-                    -name $endpoint.name `
-                    -location $type.Location
-            }
+            foreach ($location in $type.Locations) {
+                $ServiceName = if ($type.Location -eq "Service") { $locationname} else { "N/A" } # Only the services have a name
+                foreach ($endpoint in $location.endpoint) {
+                    itemCount++
+                    Write-Verbose "$($MyInvocation.MyCommand.Name):: Processing endpoint $itemCount in $($type.Location)" -ForegroundColor Green
+                    Invoke-AnalyzeEndpoint -address $endpoint.address `
+                        -ServiceName $ServiceName
+                        -binding $endpoint.binding `
+                        -bindingConfig $endpoint.bindingConfiguration `
+                        -contract $endpoint.contract `
+                        -name $endpoint.name `
+                        -location $type.Location `
+                        -behavior $endpoint.behaviorConfiguration
+                }
         }
     }
     catch {
@@ -190,20 +196,47 @@ function Invoke-AnalyzeEndpoints {
 
 }
 
-function Export-Results {
-    $timestamp = Get-Date -Format "yyyyMMdd_HHmm"
-    $hostname = $env:COMPUTERNAME
-    $safeHost = $hostname -replace '[^a-zA-Z0-9_-]', '_'  # Por si acaso, limpiamos caracteres especiales
-
-    $csvPath = "endpoints_summary_${safeHost}_$timestamp.csv"
-    $jsonPath = "endpoints_summary_${safeHost}_$timestamp.json"
-
-    $script:results | Export-Csv -Path $csvPath -NoTypeInformation -Encoding UTF8
-    #$script:results | ConvertTo-Json -Depth 3 | Out-File -FilePath $jsonPath -Encoding UTF8
-
-    Write-Host "Summary saved to $csvPath and $jsonPath" -ForegroundColor Green
+Function Export-Results {
+    [CmdletBinding()]
+    param (
+    	[Parameter()]
+    	$ConfigFilePath
+    )
+    Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
+    try {
+        if (-not $script:results) {
+            Write-Host "$($MyInvocation.MyCommand.Name):: No results to export." -ForegroundColor Yellow
+            return
+        }
+    
+        # Export results to CSV and JSON
+        $timestamp = Get-Date -Format "yyyyMMdd_HHmm"
+        $hostname = $env:COMPUTERNAME
+        $safehost = $hostname -replace '[^a-zA-Z0-9_-]', '_' # Por si acaso, limpiamos caracteres especiales
+    
+        $resultsPath = Join-Path -Path $PSScriptRoot -ChildPath "results"
+        if (-not (Test-Path $resultsPath)) {
+            New-Item -Path $resultsPath -ItemType Directory | Out-Null
+        }
+    
+        Write-Host "Exporting results from $configFilePath to $resultsPath" -ForegroundColor Green
+        Write-Host
+    
+        $csvPath = Join-Path -Path $resultsPath -ChildPath "endpoints_summary_${safehost}_$timestamp.csv"
+        $jsonPath = Join-Path -Path $resultsPath -ChildPath "endpoints_summary_${safehost}_$timestamp.json"
+    
+        $script:results | Export-Csv -Path $csvPath -NoTypeInformation -Encoding UTF8
+        $script:results | ConvertTo-Json -Depth 3 | Out-File -FilePath $jsonPath -Encoding UTF8
+    
+        Write-Host "Summary saved to $csvPath and $jsonPath" -ForegroundColor Green
+    }
+    catch {
+        Write-Host "$($MyInvocation.MyCommand.Name):: An error occurred: $_" -ForegroundColor Red
+    }
+    finally {
+        Write-Verbose "$($MyInvocation.MyCommand.Name):: END"
+    }
 }
-
 
 function Get-ConfigFilePath {
     param (
