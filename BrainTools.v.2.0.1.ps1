@@ -89,7 +89,8 @@ function Invoke-UserMenu {
             switch ($choice) {
                 "1" { Invoke-ServicesMenu }
                 "2" { Invoke-DatabaseQueriesMenu }
-                "3" { Test-Endpoints -ConfigFilePath ".\modules\EndPoints\web.config"  }
+                "3" { Test-Endpoints }
+                #"3" { Test-Endpoints -ConfigFilePath ".\modules\EndPoints\web.config"  }
                 "0" { return }
                 default { Write-Host "Invalid option. Please try again." -ForegroundColor Red }
             }
