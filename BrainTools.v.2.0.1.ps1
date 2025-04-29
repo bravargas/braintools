@@ -52,7 +52,7 @@ function Import-RequiredModules {
     try {
         foreach ($modulePath in $ModulePaths) {
 
-            $moduleName = [System.IO.Path]::GetFileNameWithoutExtension($modulePath)
+            $moduleName = [System.IO.Path]::GetFileName($modulePath)
             Write-Verbose "$($MyInvocation.MyCommand.Name):: Trying to load module $moduleName from $modulePath"
 
             if (-not (Get-Module -Name $moduleName -ListAvailable)) {
