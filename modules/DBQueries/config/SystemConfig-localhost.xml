@@ -2,7 +2,7 @@
 <Configuration>
   <Environment>
     <Database>
-      <ConnectionString>Data Source=LAPTOP-13V8CMJJ\SQLEXPRESS;Integrated Security=SSPI;Initial Catalog=AdventureWorksLT2022;Application Name=MyService;Max Pool Size=150</ConnectionString>
+      <ConnectionString>Data Source=localhost;Integrated Security=SSPI;Initial Catalog=AdventureWorksLT2022;Application Name=MyService;Max Pool Size=150</ConnectionString>
     </Database>
   </Environment>
 </Configuration>

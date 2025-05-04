@@ -60,7 +60,7 @@ function Invoke-DatabaseQueriesMenu {
 
         while ($true) {
             #Clear-Host
-            $menuOptions = @("Scripts Menu", "---","List Tables","---")
+            $menuOptions = @("Scripts Menu", "---","List Tables")
             Show-Menu -Options $menuOptions
 
             $choice = Get-UserChoice -MaxOption $menuOptions.Length

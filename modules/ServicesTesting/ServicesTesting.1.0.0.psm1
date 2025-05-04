@@ -576,13 +576,19 @@ function Update-OrInsertParameter {
 
 function Invoke-ServicesMenu {
     [CmdletBinding()]
-    param ()
+    param (
+        [string]$ProfileName = "All"
+    )
 
     try {
         Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
 
         # Import the menu configuration
-        . (Get-ServicesConfigPath -ConfigName "ServicesMenu")
+        #. (Get-ServicesConfigPath -ConfigName "ServicesMenu")
+
+        #$servicesMenu = & (Get-ServicesConfigPath -ConfigName "ServicesMenu") -ProfileName $ProfileName
+        $servicesMenu = Get-ServicesMenu -ProfileName $ProfileName
+
 
         # Extract the 'Name' property from each option
         $menuOptions = $servicesMenu.Options | ForEach-Object { $_.Name }
@@ -591,7 +597,11 @@ function Invoke-ServicesMenu {
         while ($true) {
             Show-Menu -Options $menuOptions
 
-            $servicesMenu.Options = $servicesMenu.Options | Where-Object { $_.Name -ne $servicesMenu.DividerLine }
+            $servicesMenu.Options = $servicesMenu.Options | Where-Object {
+                $_.Name -ne $servicesMenu.DividerLine -and
+                -not $_.Name.StartsWith($servicesMenu.SubTitlePrefix)
+            }
+            
             $userChoice = Get-UserChoice -MaxOption $servicesMenu.Options.Length
 
             if ($userChoice -eq 0) {
@@ -638,5 +648,72 @@ function Invoke-ServicesMenu {
         Write-Verbose "$($MyInvocation.MyCommand.Name):: END"
     }
 }
+
+function Get-ServicesMenu {
+    [CmdletBinding()]
+    param (
+        [string]$ProfileName = "All",
+        [string]$DividerLine = "---",
+        [string]$SubTitlePrefix = ">",
+        [string]$ConfigPath
+    )
+
+    if (-not $ConfigPath) {
+        $ConfigPath = Join-Path -Path $PSScriptRoot -ChildPath "Config\ServicesMenu.$script:Environment.psd1"
+    }
+
+    $config = Import-PowerShellDataFile -Path $ConfigPath
+    $CategoryNames = $config.CategoryNames
+    $ProfileCategories = $config.ProfileCategories
+    
+    # Construir perfil 'All' como combinación única de todos los demás
+    $ProfileCategories["All"] = ($ProfileCategories.Values | ForEach-Object { $_ }) | Select-Object -Unique
+
+    $categoryItems = $config.CategoryItems
+
+    $allMenuItems = foreach ($category in $categoryItems.Keys) {
+        foreach ($filename in $categoryItems[$category]) {
+            [pscustomobject]@{
+                Name     = "$($filename -replace '\.request\.xml$', '')"
+                FilePath = ".\Requests\$category\$filename"
+                Category = $category
+            }
+        }
+    }
+
+    $DividerItem = [pscustomobject]@{
+        Name     = $DividerLine
+        FilePath = ""
+    }
+
+    $options = foreach ($category in $ProfileCategories[$ProfileName]) {
+        $items = $allMenuItems | Where-Object { $_.Category -eq $category }
+        if ($items.Count -gt 0) {
+            $longName = $CategoryNames[$category]
+            if (-not $longName) { $longName = $category }
+
+            [pscustomobject]@{
+                Name     = "$SubTitlePrefix$longName"
+                FilePath = ""
+            }
+
+            $DividerItem
+            $items
+            $DividerItem
+        }
+    }
+
+    if ($options.Count -gt 0 -and $options[-1].Name -eq $DividerLine) {
+        $options = $options[0..($options.Count - 2)]
+    }
+
+    return @{
+        Title          = "Welcome. Please select an option:"
+        DividerLine    = $DividerLine
+        SubTitlePrefix = $SubTitlePrefix
+        Options        = $options
+    }
+}
+
 
 #End of specific functions for the services module

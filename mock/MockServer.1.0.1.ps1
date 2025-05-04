@@ -50,20 +50,23 @@ Write-Host "Generating mock configuration dynamically from MenuConfig.ps1..." -F
 
 # Import the menu configuration
 $menuPath = Join-Path $PSScriptRoot ".." "modules" "ServicesTesting" "Config" "ServicesMenu.mock.ps1"
-. (Resolve-Path -Path $menuPath)
+#. (Resolve-Path -Path $menuPath)
 
-
+$servicesMenu = & (Resolve-Path -Path $menuPath) -ProfileName "All"
 $mockConfig = @()
 
 foreach ($option in $ServicesMenu.Options) {
+    if($option.FilePath -eq "") {
+        continue
+    }
     $filePath = $option.FilePath
-    $requestContent = Get-Content -Path "..\$filePath" -Raw
+    $requestContent = Get-Content -Path "..\modules\ServicesTesting\$filePath" -Raw
     [xml]$xmlContent = $requestContent
 
     $type = $xmlContent.requestTemplate.type
     $path = $xmlContent.requestTemplate.path
     $method = $xmlContent.requestTemplate.method
-    $responseFileName = $filePath.Replace("request","response").Replace("\Requests", "\Responses")
+    $responseFileName = $filePath.Replace("request", "response").Replace("\Requests", "\Responses")
 
     # Extract bodyContains logic for SOAP requests
     $bodyContains = $null
@@ -75,10 +78,10 @@ foreach ($option in $ServicesMenu.Options) {
     }
 
     $mockConfig += [pscustomobject]@{
-        path         = $path
-        method       = $method
-        responseFile = $responseFileName
-        contentType  = $xmlContent.requestTemplate.headers.header | Where-Object { $_.name -eq "Content-Type" } | Select-Object -ExpandProperty value
+        path           = $path
+        method         = $method
+        responseFile   = $responseFileName
+        contentType    = $xmlContent.requestTemplate.headers.header | Where-Object { $_.name -eq "Content-Type" } | Select-Object -ExpandProperty value
         matchCondition = if ($bodyContains) { @{ bodyContains = $bodyContains } } else { $null }
     }
 }
@@ -181,7 +184,7 @@ try {
                 $response.OutputStream.Write($buffer, 0, $buffer.Length)
 
                 # Display the response and file used
-                if($route.matchCondition.bodyContains) {
+                if ($route.matchCondition.bodyContains) {
                     Write-Host "Response Body Contains: $($route.matchCondition.bodyContains)" -ForegroundColor Yellow
                 }
                 Write-Host "Response Status Code: $($response.StatusCode)" -ForegroundColor Green

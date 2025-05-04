@@ -1208,7 +1208,8 @@ function Show-Menu {
         [object[]]$Options,
         [string[]]$Header,
         [string]$DividerLine = "---",
-        [string]$ExitOption = "Exit"
+        [string]$ExitOption = "Exit",
+        [string]$SubTitlePrefix = ">"
     )
 
     Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
@@ -1306,6 +1307,13 @@ function Show-Menu {
                 Write-Host ($SplitLine) -ForegroundColor $FrameColor
                 $item--
             }
+            elseif ($displayName.StartsWith($SubTitlePrefix)) {
+                $optionText = "$OptionsSpaces$displayName".Replace($SubTitlePrefix, "") 
+                Write-Host ("$Vertical") -NoNewline -ForegroundColor $FrameColor
+                Write-Host ($optionText.PadRight($SeparatorLength)) -NoNewline -ForegroundColor White
+                Write-Host ("$Vertical") -ForegroundColor $FrameColor
+                $item--
+            }
             else {
                 $optionText = "$OptionsSpaces$('{0:D2}' -f ($item))$OptionsSeparator$displayName"
                 Write-Host ("$Vertical") -NoNewline -ForegroundColor $FrameColor
@@ -1315,6 +1323,7 @@ function Show-Menu {
         }
 
         # Exit (no quotes)
+        Write-Host ($SplitLine) -ForegroundColor $FrameColor
         $exitText = "$OptionsSpaces" + "00$OptionsSeparator" + $ExitOption
         Write-Host ("$Vertical") -NoNewline -ForegroundColor $FrameColor
         Write-Host ($exitText.PadRight($SeparatorLength)) -NoNewline -ForegroundColor Red

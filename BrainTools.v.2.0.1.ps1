@@ -1,6 +1,7 @@
 [CmdletBinding()]
 param (
     [string]$Environment = "MOCK", # Default to "QA"
+    [string]$ProfileName = "All", # Default to "QA"
     [string[]]$RequestFiles = $null # Optional parameter for specifying one or more request files
 )
 
@@ -82,12 +83,12 @@ function Invoke-UserMenu {
         Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
         while ($true) {
             #Clear-Host
-            $menuOptions = @("SOAP and REST Services Testing","---", "Database Queries","---", "Test Endpoints", "---")
+            $menuOptions = @("SOAP and REST Services Testing","---", "Database Queries","---", "Test Endpoints")
             Show-Menu -Options $menuOptions
 
             $choice = Get-UserChoice -MaxOption $menuOptions.Length
             switch ($choice) {
-                "1" { Invoke-ServicesMenu }
+                "1" { Invoke-ServicesMenu -ProfileName $ProfileName }
                 "2" { Invoke-DatabaseQueriesMenu }
                 "3" { Test-Endpoints }
                 #"3" { Test-Endpoints -ConfigFilePath ".\modules\EndPoints\web.config"  }
