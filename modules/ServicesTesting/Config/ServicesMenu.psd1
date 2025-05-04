@@ -1,11 +1,11 @@
 @{
     CategoryNames = @{
-        SBI = "Security and Banking Interface"
+        SBI = "Standard Banking Interface"
         VOY = "Voyager Services"
-        ALE = "Alert Engine"
-        REG = "Registration"
-        RCS = "Remote Control System"
-        MFH = "Message Forwarding Hub"
+        ALE = "Alert Services"
+        REG = "Registration Services"
+        RCS = "Rich Channel Services"
+        MFH = "MFHost Services"
         ALH = "Alert Hub"
         TST = "Test Services"
     }
