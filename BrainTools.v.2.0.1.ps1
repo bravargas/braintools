@@ -19,14 +19,14 @@ if ($RequestFiles) {
             Write-Host "Executing request file: $RequestFile" -ForegroundColor Cyan
 
             # Process the specified request file
-            $processedContent = Invoke-RequestFile -FilePath $RequestFile
+            $processedContent = Invoke-RequestFile -FilePath $RequestFile -Verbose:$VerbosePreference
 
             # Invoke the request
-            $response = Invoke-Request -RequestContent $processedContent.RequestContent -Certificate $processedContent.Certificate -ProxyUrl $processedContent.ProxyUrl -ProxyUsername $processedContent.ProxyUsername -ProxyPassword $processedContent.ProxyPassword
+            $response = Invoke-Request -RequestContent $processedContent.RequestContent -Certificate $processedContent.Certificate -ProxyUrl $processedContent.ProxyUrl -ProxyUsername $processedContent.ProxyUsername -ProxyPassword $processedContent.ProxyPassword -Verbose:$VerbosePreference
 
             # Process the response
             if ($response) {
-                Invoke-ProcessResponse -ResponseContent $response -RequestTemplate $processedContent.RequestContent
+                Invoke-ProcessResponse -ResponseContent $response -RequestTemplate $processedContent.RequestContent -Verbose:$VerbosePreference
             }
 
             Write-Host "Request execution completed for: $RequestFile" -ForegroundColor Green
@@ -84,14 +84,13 @@ function Invoke-UserMenu {
         while ($true) {
             #Clear-Host
             $menuOptions = @("SOAP and REST Services Testing","---", "Database Queries","---", "Test Endpoints")
-            Show-Menu -Options $menuOptions
+            Show-Menu -Options $menuOptions -Verbose:$VerbosePreference
 
             $choice = Get-UserChoice -MaxOption $menuOptions.Length
             switch ($choice) {
-                "1" { Invoke-ServicesMenu -ProfileName $ProfileName }
-                "2" { Invoke-DatabaseQueriesMenu }
-                "3" { Test-Endpoints }
-                #"3" { Test-Endpoints -ConfigFilePath ".\modules\EndPoints\web.config"  }
+                "1" { Invoke-ServicesMenu -ProfileName $ProfileName -Verbose:$VerbosePreference }
+                "2" { Invoke-DatabaseQueriesMenu -Verbose:$VerbosePreference }
+                "3" { Test-Endpoints -Verbose:$VerbosePreference }
                 "0" { return }
                 default { Write-Host "Invalid option. Please try again." -ForegroundColor Red }
             }
@@ -123,9 +122,9 @@ try {
     )
 
     # Set the environment for the modules
-    Set-ServicesEnvironment -Environment $Environment
+    Set-ServicesEnvironment -Environment $Environment -Verbose:$VerbosePreference
 
-    Set-DBQueriesEnvironment -Environment $Environment
+    Set-DBQueriesEnvironment -Environment $Environment -Verbose:$VerbosePreference
 
     Invoke-UserMenu
 

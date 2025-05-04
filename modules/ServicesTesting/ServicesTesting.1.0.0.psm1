@@ -247,7 +247,7 @@ function Invoke-Request {
         Write-Verbose "Headers: $($headers | ConvertTo-Json -Depth 10)"
         Write-Verbose "Body: $body"
 
-        # Prepare parameters for Invoke-WebRequest
+        # Prepare parameters for IWR
         $params = @{
             Uri     = $uri
             Method  = $method
@@ -269,7 +269,7 @@ function Invoke-Request {
             }
         }
      
-        # Make the HTTP request using Invoke-WebRequest
+        # Make the HTTP request using IWR
         $response = Invoke-WebRequest @params -UseBasicParsing
 
         # Print the status code
@@ -584,9 +584,6 @@ function Invoke-ServicesMenu {
         Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
 
         # Import the menu configuration
-        #. (Get-ServicesConfigPath -ConfigName "ServicesMenu")
-
-        #$servicesMenu = & (Get-ServicesConfigPath -ConfigName "ServicesMenu") -ProfileName $ProfileName
         $servicesMenu = Get-ServicesMenu -ProfileName $ProfileName
 
 
@@ -633,7 +630,13 @@ function Invoke-ServicesMenu {
                 # Process the response using Invoke-ProcessResponse
                 if ($response) {
                     Write-Verbose "Response:"
-                    Write-Verbose $response                
+                    try {
+                        Write-Verbose ($response | Out-String)
+                    }
+                    catch {
+                        Write-Verbose ($response | ConvertTo-Json -Depth 10)
+                    }
+                                   
                     Invoke-ProcessResponse -ResponseContent $response -RequestTemplate $processedContent.RequestContent
                 }            
             }
@@ -659,14 +662,14 @@ function Get-ServicesMenu {
     )
 
     if (-not $ConfigPath) {
-        $ConfigPath = Join-Path -Path $PSScriptRoot -ChildPath "Config\ServicesMenu.$script:Environment.psd1"
+        $ConfigPath = Join-Path -Path $PSScriptRoot -ChildPath "Config\ServicesMenu.psd1"
     }
 
     $config = Import-PowerShellDataFile -Path $ConfigPath
     $CategoryNames = $config.CategoryNames
     $ProfileCategories = $config.ProfileCategories
     
-    # Construir perfil 'All' como combinación única de todos los demás
+    # Create 'All' as an unique category that includes all categories
     $ProfileCategories["All"] = ($ProfileCategories.Values | ForEach-Object { $_ }) | Select-Object -Unique
 
     $categoryItems = $config.CategoryItems
