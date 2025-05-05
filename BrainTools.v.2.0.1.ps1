@@ -83,7 +83,7 @@ function Invoke-UserMenu {
         Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
         while ($true) {
             #Clear-Host
-            $menuOptions = @("SOAP and REST Services Testing","---", "Database Queries","---", "Test Endpoints")
+            $menuOptions = @("SOAP and REST Services Testing", "---", "Database Queries", "---", "Test Endpoints","---", "IIS Report")
             Show-Menu -Options $menuOptions -Verbose:$VerbosePreference
 
             $choice = Get-UserChoice -MaxOption $menuOptions.Length
@@ -91,6 +91,7 @@ function Invoke-UserMenu {
                 "1" { Invoke-ServicesMenu -ProfileName $ProfileName -Verbose:$VerbosePreference }
                 "2" { Invoke-DatabaseQueriesMenu -Verbose:$VerbosePreference }
                 "3" { Test-Endpoints -Verbose:$VerbosePreference }
+                "4" { Invoke-IISReport -AsHtml -Show -Verbose:$VerbosePreference }
                 "0" { return }
                 default { Write-Host "Invalid option. Please try again." -ForegroundColor Red }
             }
@@ -118,7 +119,8 @@ try {
         ".\modules\ServicesTesting\ServicesTesting.1.0.0.psm1",
         ".\modules\General\UtilsModule.2.7.psm1",
         ".\modules\DBQueries\DBQueries.1.0.0.psm1",
-        ".\modules\EndPoints\EndpointsTest.0.0.1.psm1"
+        ".\modules\EndPoints\EndpointsTest.0.0.1.psm1",
+        ".\modules\IISTool\IISReport.0.0.1.psm1"    
     )
 
     # Set the environment for the modules
