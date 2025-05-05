@@ -293,6 +293,12 @@ function Invoke-Request {
     }
     catch {
         Write-Host "An error occurred while executing the request: $($_.Exception.Message)" -ForegroundColor Red
+        if ($_.ErrorDetails.Message) {
+            Write-Host "Error Detail: $($_.ErrorDetails.Message)" -ForegroundColor Yellow
+        }
+        if ($_.Exception.InnerException) {
+            Write-Host "Inner Exception: $($_.Exception.InnerException.Message)" -ForegroundColor Red
+        }
         return $null
     }
     finally {
@@ -691,7 +697,7 @@ function Get-ServicesMenu {
 
     $options = foreach ($category in $ProfileCategories[$ProfileName]) {
         $items = $allMenuItems | Where-Object { $_.Category -eq $category }
-        if ($items.Count -gt 0) {
+        if ($items) {
             $longName = $CategoryNames[$category]
             if (-not $longName) { $longName = $category }
 
