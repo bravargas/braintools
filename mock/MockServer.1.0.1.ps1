@@ -3,7 +3,9 @@ function Get-ProcessUsingPort {
         [int]$Port
     )
 
-    if ($IsWindows) {
+    $isWin = [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform("Windows")
+
+    if ($isWin) {
         $netstatOutput = netstat -ano | Select-String ":$Port\s+.*LISTENING\s+(\d+)"
         if ($netstatOutput) {
             $pid = ($netstatOutput -replace '.*LISTENING\s+', '') -as [int]
@@ -49,14 +51,14 @@ $config = Get-Content -Path $configFile -Raw | ConvertFrom-Json
 Write-Host "Generating mock configuration dynamically from MenuConfig.ps1..." -ForegroundColor Cyan
 
 # Import the menu configuration
-$menuPath = Join-Path $PSScriptRoot ".." "modules" "ServicesTesting" "Config" "ServicesMenu.mock.ps1"
-#. (Resolve-Path -Path $menuPath)
+$basePath = Join-Path $PSScriptRoot ".."
+$menuPath = Join-Path $basePath "modules\ServicesTesting\Config\ServicesMenu.mock.ps1"
 
 $servicesMenu = & (Resolve-Path -Path $menuPath) -ProfileName "All"
 $mockConfig = @()
 
 foreach ($option in $ServicesMenu.Options) {
-    if($option.FilePath -eq "") {
+    if ($option.FilePath -eq "") {
         continue
     }
     $filePath = $option.FilePath
