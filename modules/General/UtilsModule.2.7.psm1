@@ -1230,6 +1230,160 @@ function Show-Menu {
         }
 
         $TitleSpaces = " " * 3
+        $ColumnSpaces = " " * 20
+
+        # Safely extract lengths
+        $HeaderMaxLength = ($Header | ForEach-Object { $_.Length } | Measure-Object -Maximum).Maximum
+        $OptionNames = $Options | ForEach-Object {
+            if ($_ -is [string]) {
+                $_
+            } 
+            elseif ($_.PSObject.Properties["Name"]) {
+                $_.Name
+            } 
+            else {
+                "<unnamed>"
+            }
+        }
+        $OptionsMaxLength = ($OptionNames | ForEach-Object { $_.Length } | Measure-Object -Maximum).Maximum
+        $OptionsSeparator = " $([char]0x2500) "  # ─
+        $OptionsSpaces = " " * 4
+        $ItemMaxLength = $OptionsMaxLength + $Options.Length.ToString().Length + $OptionsSeparator.Length + $OptionsSpaces.Length
+        $TitleMaxLength = $TitleSpaces.Length + $Title.Length
+
+        $SeparatorLength = [int](
+            @($HeaderMaxLength, ($ItemMaxLength*2+$ColumnSpaces.Length), $TitleMaxLength | Where-Object { $_ -ne $null }) |
+            Measure-Object -Maximum |
+            Select-Object -ExpandProperty Maximum
+        )
+
+        # Box drawing chars
+        $TopLeft = [char]0x250C  # ┌
+        $TopRight = [char]0x2510  # ┐
+        $BottomLeft = [char]0x2514  # └
+        $BottomRight = [char]0x2518  # ┘
+        $Horizontal = [char]0x2500  # ─
+        $Vertical = [char]0x2502  # │
+        $Tee = [char]0x252C  # ┬
+        $Cross = [char]0x253C  # ┼
+        $LeftTee = [char]0x251C  # ├
+        $RightTee = [char]0x2524  # ┤
+
+        $TopLine = "$TopLeft" + ("$Horizontal" * $SeparatorLength) + "$TopRight"
+        $SplitLine = "$LeftTee" + ("$Horizontal" * $SeparatorLength) + "$RightTee"
+        $BottomLine = "$BottomLeft" + ("$Horizontal" * $SeparatorLength) + "$BottomRight"
+
+        $FrameColor = "Gray"
+
+        # Header box
+        if ($Header) {
+            Write-Host ($TopLine) -ForegroundColor $FrameColor
+            foreach ($line in $Header) {
+                $padding = [math]::Floor(($SeparatorLength - $line.Length) / 2)
+                $centeredLine = (' ' * $padding) + $line
+                Write-Host ("$Vertical") -NoNewline -ForegroundColor $FrameColor
+                Write-Host ($centeredLine.PadRight($SeparatorLength)) -NoNewline -ForegroundColor Cyan
+                Write-Host ("$Vertical") -ForegroundColor $FrameColor
+            }
+            Write-Host ($SplitLine) -ForegroundColor $FrameColor
+        }
+
+        # Title
+        if ($Title) {
+            $padding = [math]::Floor(($SeparatorLength - $Title.Length) / 2)
+            $centeredTitle = (' ' * $padding) + $Title
+            Write-Host ("$Vertical") -NoNewline -ForegroundColor $FrameColor
+            Write-Host ($centeredTitle).PadRight($SeparatorLength)) -NoNewline -ForegroundColor Yellow
+            Write-Host ("$Vertical") -ForegroundColor $FrameColor
+            Write-Host ($SplitLine) -ForegroundColor $FrameColor
+        }
+
+        # Menu items
+        $item = 0
+        for ($i = 0; $i -lt $Options.Length; $i++) {
+            $displayName = if ($Options[$i] -is [string]) {
+                $Options[$i]
+            } 
+            else {
+                "<unnamed>"
+            }
+
+            $item++
+            if ($displayName -eq $DividerLine) {
+                Write-Host ($SplitLine) -ForegroundColor $FrameColor
+                $item--
+            }
+            elseif ($displayName.StartsWith($SubTitlePrefix)) {
+                $optionText = "$OptionsSpaces$displayName".Replace($SubTitlePrefix, "") 
+                $padding = [math]::Floor(($SeparatorLength - $optionText.Length) / 2)
+                $centeredSubtitle = (' ' * $padding) + $optionText                
+                Write-Host ("$Vertical") -NoNewline -ForegroundColor $FrameColor
+                Write-Host ($centeredSubtitle.PadRight($SeparatorLength)) -NoNewline -ForegroundColor White
+                Write-Host ("$Vertical") -ForegroundColor $FrameColor
+                $item--
+            }
+            else {
+                if ($item % 2 -eq 1) {
+                    $LineColor = "Green"
+                }
+                else {
+                    $LineColor = "Magenta"
+                }
+                $optionText = "$OptionsSpaces$('{0:D2}' -f ($item))$OptionsSeparator$displayName"
+                Write-Host ("$Vertical") -NoNewline -ForegroundColor $FrameColor
+                Write-Host ($optionText.PadRight($SeparatorLength)) -NoNewline -ForegroundColor $LineColor
+                Write-Host ("$Vertical") -ForegroundColor $FrameColor
+            }
+        }
+
+        # Exit (no quotes)
+        Write-Host ($SplitLine) -ForegroundColor $FrameColor
+        $exitText = "$OptionsSpaces" + "00$OptionsSeparator" + $ExitOption
+        Write-Host ("$Vertical") -NoNewline -ForegroundColor $FrameColor
+        Write-Host ($exitText.PadRight($SeparatorLength)) -NoNewline -ForegroundColor Red
+        Write-Host ("$Vertical") -ForegroundColor $FrameColor        
+        
+
+        # Footer
+        Write-Host ($BottomLine) -ForegroundColor $FrameColor
+    }
+    catch {
+        Write-Error "Error in $($MyInvocation.MyCommand.Name): $_"
+    }
+    finally {
+        Write-Verbose "$($MyInvocation.MyCommand.Name):: END"
+    }
+}
+
+function Show-Menu0 {
+    [CmdletBinding()]
+    param (
+        [string]$Title = "Welcome. Please select an option:",
+        [object[]]$Options,
+        [string[]]$Header,
+        [string]$DividerLine = "---",
+        [string]$ExitOption = "Exit",
+        [string]$SubTitlePrefix = ">"
+    )
+
+    Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
+
+    try {
+
+        if (-not $Header) {
+            # BrainTools ASCII Banner
+            $asciiArt = @'
+    ____             _     ______            __    
+   / __ )_________ _(_)___/_  __/___  ____  / /____
+  / __  / ___/ __ `/ / __ \/ / / __ \/ __ \/ / ___/
+ / /_/ / /  / /_/ / / / / / / / /_/ / /_/ / (__  ) 
+/_____/_/   \__,_/_/_/ /_/_/  \____/\____/_/____/  
+'@
+
+            $Header = $asciiArt -split "`r?`n"
+        }
+
+        $TitleSpaces = " " * 3
 
         # Safely extract lengths
         $HeaderMaxLength = ($Header | ForEach-Object { $_.Length } | Measure-Object -Maximum).Maximum
@@ -1340,6 +1494,7 @@ function Show-Menu {
         Write-Verbose "$($MyInvocation.MyCommand.Name):: END"
     }
 }
+
 function Get-UserChoice {
     [CmdletBinding()]
     param (
