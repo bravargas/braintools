@@ -40,39 +40,39 @@ if ($RequestFiles) {
     }
 }
 
-
 function Import-RequiredModules {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)]
-        [string[]]$ModulePaths
+        [string[]]$ModuleKeys
     )
 
     Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
 
     try {
-        foreach ($modulePath in $ModulePaths) {
+        foreach ($key in $ModuleKeys) {
+            if ($Global:ModuleMap.ContainsKey($key)) {
+                $modulePath = $Global:ModuleMap[$key]
+                $moduleName = [System.IO.Path]::GetFileNameWithoutExtension($modulePath)
 
-            $moduleName = [System.IO.Path]::GetFileName($modulePath)
-            Write-Verbose "$($MyInvocation.MyCommand.Name):: Trying to load module $moduleName from $modulePath"
-
-            if (-not (Get-Module -Name $moduleName -ListAvailable)) {
-                Import-Module -Force $modulePath -ErrorAction Stop
-                Write-Verbose "$($MyInvocation.MyCommand.Name):: Imported module: $modulePath"
-            }
-            else {
-                Write-Verbose "$($MyInvocation.MyCommand.Name):: Module already loaded: $moduleName"
+                if (-not (Get-Module -Name $moduleName)) {
+                    Import-Module -Force $modulePath -ErrorAction Stop
+                    Write-Verbose "$($MyInvocation.MyCommand.Name):: Imported module: $moduleName"
+                } else {
+                    Write-Verbose "$($MyInvocation.MyCommand.Name):: Module already loaded: $moduleName"
+                }
+            } else {
+                Write-Warning "Unknown module key: $key"
             }
         }
-      
     }
     catch {
-        Write-Error "$($MyInvocation.MyCommand.Name):: Failed to import module: $modulePath. Error: $_"
+        Write-Error "$($MyInvocation.MyCommand.Name):: Failed to import module. Error: $_"
         throw
     }
     finally {
         Write-Verbose "$($MyInvocation.MyCommand.Name):: END"
-    }      
+    }
 }
 
 function Invoke-UserMenu {
@@ -82,16 +82,29 @@ function Invoke-UserMenu {
     try {
         Write-Verbose "$($MyInvocation.MyCommand.Name):: START"
         while ($true) {
-            #Clear-Host
             $menuOptions = @("SOAP and REST Services Testing", "---", "Database Queries", "---", "Test Endpoints","---", "IIS Report")
             Show-Menu -Options $menuOptions -Verbose:$VerbosePreference
 
             $choice = Get-UserChoice -MaxOption $menuOptions.Length
             switch ($choice) {
-                "1" { Invoke-ServicesMenu -ProfileName $ProfileName -Verbose:$VerbosePreference }
-                "2" { Invoke-DatabaseQueriesMenu -Verbose:$VerbosePreference }
-                "3" { Test-Endpoints -Verbose:$VerbosePreference }
-                "4" { Invoke-IISReport -AsHtml -Show -Verbose:$VerbosePreference }
+                "1" {
+                    Import-RequiredModules -ModuleKeys @("ServicesTesting")
+                    Set-ServicesEnvironment -Environment $Environment -Verbose:$VerbosePreference
+                    Invoke-ServicesMenu -ProfileName $ProfileName -Verbose:$VerbosePreference
+                }
+                "2" {
+                    Import-RequiredModules -ModuleKeys @("DBQueries")
+                    Set-DBQueriesEnvironment -Environment $Environment -Verbose:$VerbosePreference
+                    Invoke-DatabaseQueriesMenu -Verbose:$VerbosePreference
+                }
+                "3" {
+                    Import-RequiredModules -ModuleKeys @("EndpointsTest")
+                    Test-Endpoints -Verbose:$VerbosePreference
+                }
+                "4" {
+                    Import-RequiredModules -ModuleKeys @("IISReport")
+                    Invoke-IISReport -AsHtml -Show -Verbose:$VerbosePreference
+                }
                 "0" { return }
                 default { Write-Host "Invalid option. Please try again." -ForegroundColor Red }
             }
@@ -99,12 +112,12 @@ function Invoke-UserMenu {
     }
     catch {
         Write-Host "$($MyInvocation.MyCommand.Name):: An error occurred: $_" -ForegroundColor Red
-        Write-Verbose "$($MyInvocation.MyCommand.Name):: Error details: $($_.Exception.Message)"
     }
     finally {
         Write-Verbose "$($MyInvocation.MyCommand.Name):: END"
     }
 }
+
 
 try {
     Clear-Host
@@ -115,19 +128,16 @@ try {
     # Example usage of the Environment parameter
     Write-Verbose "$($MyInvocation.MyCommand.Name):: Using environment: $Environment"
 
-    Import-RequiredModules -ModulePaths @(
-        ".\modules\ServicesTesting\ServicesTesting.1.0.0.psm1",
-        ".\modules\General\UtilsModule.2.7.psm1",
-        ".\modules\DBQueries\DBQueries.1.0.0.psm1",
-        ".\modules\EndPoints\EndpointsTest.0.0.1.psm1",
-        ".\modules\IISTool\IISReport.0.0.1.psm1"    
-    )
+    $Global:ModuleMap = @{
+        "ServicesTesting" = ".\modules\ServicesTesting\ServicesTesting.1.0.0.psm1"
+        "UtilsModule"     = ".\modules\General\UtilsModule.2.7.psm1"
+        "DBQueries"       = ".\modules\DBQueries\DBQueries.1.0.0.psm1"
+        "EndpointsTest"   = ".\modules\EndPoints\EndpointsTest.0.0.1.psm1"
+        "IISReport"       = ".\modules\IISTool\IISReport.0.0.1.psm1"
+    }
 
-    # Set the environment for the modules
-    Set-ServicesEnvironment -Environment $Environment -Verbose:$VerbosePreference
-
-    Set-DBQueriesEnvironment -Environment $Environment -Verbose:$VerbosePreference
-
+    Import-RequiredModules -ModuleKeys @("UtilsModule")
+    
     Invoke-UserMenu
 
 }
