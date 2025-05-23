@@ -269,9 +269,25 @@ function Invoke-Request {
             }
         }
      
-        # Make the HTTP request using IWR
-        $response = Invoke-WebRequest @params -UseBasicParsing
+        try {
+            # Ensure TLS 1.2 is used for all requests
+            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
+            $response = Invoke-WebRequest @params -UseBasicParsing
+        }
+        catch {
+            if ($_.Exception.Message -like "*SSL/TLS*") {
+                Write-Host "Initial request failed due to SSL error. Ignoring SSL errors and retrying..."
+                [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { $true }
+                $response = Invoke-WebRequest @params -UseBasicParsing
+            }
+            else {
+                Write-Host "Error: $($_)" -ForegroundColor Red            
+                throw $_
+            }
+        }
+        # Make the HTTP request using IWR
+        
         # Print the status code
         Write-Host "HTTP Status Code: $($response.StatusCode)" -ForegroundColor Cyan
 
